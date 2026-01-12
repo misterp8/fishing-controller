@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<body style="font-size:28px;text-align:center">
+
+<h2 id="status">Enter your name</h2>
+<input id="nameInput" placeholder="English name">
+<button onclick="join()">Join</button>
+
+<hr>
+
+<button id="left" onclick="send('left')">⬅️</button>
+<button id="right" onclick="send('right')">➡️</button>
+<br><br>
+<button id="cast" onclick="sendAction('cast')">🎣</button>
+
+<script>
+const ws = new WebSocket(
+  'wss://fishing-ws-server.onrender.com'
+);
+
+let myName = '';
+let myTurn = false;
+
+function join() {
+  myName = nameInput.value;
+  ws.send(JSON.stringify({ type:'join', name: myName }));
+}
+
+ws.onmessage = e => {
+  const data = JSON.parse(e.data);
+  if (data.type === 'state') {
+    myTurn = data.currentPlayer === myName;
+    status.innerText = myTurn
+      ? '🎉 Your Turn!'
+      : `⏳ Waiting… Now: ${data.currentPlayer}`;
+    setDisabled(!myTurn);
+  }
+};
+
+function setDisabled(disabled) {
+  ['left','right','cast'].forEach(id => {
+    document.getElementById(id).disabled = disabled;
+  });
+}
+
+function send(dir) {
+  if (!myTurn) return;
+  ws.send(JSON.stringify({ type:'control', action:'move', dir }));
+}
+
+function sendAction(act) {
+  if (!myTurn) return;
+  ws.send(JSON.stringify({ type:'control', action: act }));
+}
+</script>
+</body>
+</html>
