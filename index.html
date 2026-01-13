@@ -64,6 +64,28 @@
                 0 2px 10px rgba(0,0,0,0.5),
                 inset 0 4px 8px rgba(0,0,0,0.4);
         }
+
+        /* Directional Pad specific styles */
+        .d-pad-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+            max-width: 320px;
+        }
+        .d-btn {
+            aspect-ratio: 1.5 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: linear-gradient(to bottom, #334155, #1e293b);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .d-btn:active {
+            background: #475569;
+        }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col items-center justify-center bg-custom">
@@ -87,10 +109,10 @@
     </div>
 
     <!-- CONTROLLER SCREEN (Hidden by default) -->
-    <div id="controller-screen" class="hidden z-10 flex-col h-full w-full max-w-lg justify-between py-8 px-4">
+    <div id="controller-screen" class="hidden z-10 flex-col h-full w-full max-w-lg justify-between py-6 px-4">
         
         <!-- HEADER HUD -->
-        <div class="glass-panel rounded-2xl p-4 flex justify-between items-center mb-4">
+        <div class="glass-panel rounded-2xl p-4 flex justify-between items-center mb-2">
             <div class="flex flex-col">
                 <span class="text-xs text-cyan-300 font-bold tracking-widest uppercase">玩家</span>
                 <span id="player-name-display" class="text-2xl font-black text-white truncate max-w-[150px]">...</span>
@@ -101,26 +123,55 @@
         </div>
 
         <!-- MAIN CONTROLS AREA -->
-        <div id="controls-container" class="flex-1 flex flex-col justify-center gap-8 opacity-50 pointer-events-none transition-all duration-500">
+        <div id="controls-container" class="flex-1 flex flex-col items-center justify-center gap-6 opacity-50 pointer-events-none transition-all duration-500 w-full">
             
-            <!-- DIRECTIONAL PAD -->
-            <div class="flex justify-between gap-4">
-                <button ontouchstart="handleBtn(event, 'LEFT')" onmousedown="handleBtn(event, 'LEFT')"
-                    class="btn-3a flex-1 h-32 rounded-2xl bg-gradient-to-b from-slate-700 to-slate-800 border border-white/10 flex items-center justify-center active:bg-slate-700">
-                    <svg class="w-12 h-12 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
+            <!-- D-PAD AREA -->
+            <div class="d-pad-grid">
+                <!-- Top Row -->
+                <div class="col-start-2">
+                    <button ontouchstart="handleBtn(event, 'UP')" onmousedown="handleBtn(event, 'UP')"
+                        class="btn-3a d-btn w-full">
+                        <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
+                    </button>
+                </div>
                 
-                <button ontouchstart="handleBtn(event, 'RIGHT')" onmousedown="handleBtn(event, 'RIGHT')"
-                    class="btn-3a flex-1 h-32 rounded-2xl bg-gradient-to-b from-slate-700 to-slate-800 border border-white/10 flex items-center justify-center active:bg-slate-700">
-                    <svg class="w-12 h-12 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
-                </button>
+                <!-- Middle Row -->
+                <div class="col-start-1 row-start-2">
+                    <button ontouchstart="handleBtn(event, 'LEFT')" onmousedown="handleBtn(event, 'LEFT')"
+                        class="btn-3a d-btn w-full">
+                        <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                </div>
+
+                <div class="col-start-2 row-start-2 flex items-center justify-center">
+                    <div class="w-4 h-4 rounded-full bg-white/20"></div>
+                </div>
+
+                <div class="col-start-3 row-start-2">
+                    <button ontouchstart="handleBtn(event, 'RIGHT')" onmousedown="handleBtn(event, 'RIGHT')"
+                        class="btn-3a d-btn w-full">
+                        <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Bottom Row (Moved inside grid or managed by flex below if distinct) -->
+                <!-- Let's put DOWN button below the grid using flex to allow grid to be compact -->
             </div>
+             <!-- Separate Down Button aligned with grid -->
+             <div class="w-full max-w-[320px] grid grid-cols-3 gap-3 -mt-4">
+                 <div class="col-start-2">
+                    <button ontouchstart="handleBtn(event, 'DOWN')" onmousedown="handleBtn(event, 'DOWN')"
+                        class="btn-3a d-btn w-full">
+                        <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                 </div>
+             </div>
 
             <!-- ACTION BUTTON (CAST / REEL) -->
             <button id="action-btn" ontouchstart="handleBtn(event, 'CLICK')" onmousedown="handleBtn(event, 'CLICK')"
-                class="btn-3a w-full aspect-square rounded-full bg-gradient-to-br from-red-500 to-red-700 border-4 border-red-400/50 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(220,38,38,0.4)] animate-pulse-glow">
-                <span class="text-5xl font-black tracking-widest drop-shadow-lg">動作</span>
-                <span class="text-sm font-bold text-red-200 mt-2 tracking-widest uppercase opacity-80">拋竿 / 收竿</span>
+                class="btn-3a w-40 h-40 rounded-full bg-gradient-to-br from-red-500 to-red-700 border-4 border-red-400/50 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(220,38,38,0.4)] animate-pulse-glow mt-4">
+                <span class="text-3xl font-black tracking-widest drop-shadow-lg">動作</span>
+                <span class="text-xs font-bold text-red-200 mt-1 tracking-widest uppercase opacity-80">拋竿 / 收竿</span>
                 
                 <!-- Shine effect -->
                 <div class="absolute inset-0 w-full h-full rounded-full overflow-hidden">
@@ -131,8 +182,8 @@
         </div>
 
         <!-- FOOTER INFO -->
-        <div class="text-center mt-4">
-            <p id="queue-pos" class="text-gray-400 font-mono text-sm font-bold">排隊位置: 計算中...</p>
+        <div class="text-center mt-2">
+            <p id="queue-pos" class="text-gray-400 font-mono text-xs font-bold">排隊位置: 計算中...</p>
         </div>
 
     </div>
@@ -271,7 +322,7 @@
             if (!ws || !isMyTurn || ws.readyState !== WebSocket.OPEN) return;
 
             // Visual Feedback
-            safeVibrate(50);
+            safeVibrate(30);
 
             // Send standard action
             ws.send(JSON.stringify({
