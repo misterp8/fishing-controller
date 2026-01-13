@@ -12,18 +12,16 @@
             overflow: hidden; 
             background-color: #0f172a; 
             color: white;
-            font-family: system-ui, -apple-system, "Microsoft JhengHei", sans-serif; /* Added TC font support */
-            touch-action: none; /* Prevent zoom/scroll */
+            font-family: system-ui, -apple-system, "Microsoft JhengHei", sans-serif;
+            touch-action: none; 
         }
 
-        /* Move background image here to prevent Tailwind parsing errors with URL parameters */
         .bg-custom {
             background-image: url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=2070&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
         }
 
-        /* 3A Button Animations */
         @keyframes shine-sweep {
             0% { transform: translateX(-150%) skewX(-20deg); }
             50%, 100% { transform: translateX(250%) skewX(-20deg); }
@@ -40,7 +38,6 @@
             animation: pulse-glow 2s infinite;
         }
 
-        /* Glassmorphism Classes */
         .glass-panel {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(12px);
@@ -65,7 +62,6 @@
                 inset 0 4px 8px rgba(0,0,0,0.4);
         }
 
-        /* Directional Pad specific styles */
         .d-pad-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -90,7 +86,6 @@
 </head>
 <body class="h-screen w-screen flex flex-col items-center justify-center bg-custom">
     
-    <!-- Dark Overlay -->
     <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0"></div>
 
     <!-- CONNECTION / LOGIN SCREEN -->
@@ -108,7 +103,7 @@
         </button>
     </div>
 
-    <!-- CONTROLLER SCREEN (Hidden by default) -->
+    <!-- CONTROLLER SCREEN -->
     <div id="controller-screen" class="hidden z-10 flex-col h-full w-full max-w-lg justify-between py-6 px-4">
         
         <!-- HEADER HUD -->
@@ -125,20 +120,17 @@
         <!-- MAIN CONTROLS AREA -->
         <div id="controls-container" class="flex-1 flex flex-col items-center justify-center gap-6 opacity-50 pointer-events-none transition-all duration-500 w-full">
             
-            <!-- D-PAD AREA -->
             <div class="d-pad-grid">
-                <!-- Top Row -->
+                <!-- Top -->
                 <div class="col-start-2">
-                    <button ontouchstart="handleBtn(event, 'UP')" onmousedown="handleBtn(event, 'UP')"
-                        class="btn-3a d-btn w-full">
+                    <button ontouchstart="handleBtn(event, 'UP')" onmousedown="handleBtn(event, 'UP')" class="btn-3a d-btn w-full">
                         <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
                     </button>
                 </div>
                 
-                <!-- Middle Row -->
+                <!-- Left -->
                 <div class="col-start-1 row-start-2">
-                    <button ontouchstart="handleBtn(event, 'LEFT')" onmousedown="handleBtn(event, 'LEFT')"
-                        class="btn-3a d-btn w-full">
+                    <button ontouchstart="handleBtn(event, 'LEFT')" onmousedown="handleBtn(event, 'LEFT')" class="btn-3a d-btn w-full">
                         <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
                     </button>
                 </div>
@@ -147,33 +139,28 @@
                     <div class="w-4 h-4 rounded-full bg-white/20"></div>
                 </div>
 
+                <!-- Right -->
                 <div class="col-start-3 row-start-2">
-                    <button ontouchstart="handleBtn(event, 'RIGHT')" onmousedown="handleBtn(event, 'RIGHT')"
-                        class="btn-3a d-btn w-full">
+                    <button ontouchstart="handleBtn(event, 'RIGHT')" onmousedown="handleBtn(event, 'RIGHT')" class="btn-3a d-btn w-full">
                         <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
                     </button>
                 </div>
-
-                <!-- Bottom Row (Moved inside grid or managed by flex below if distinct) -->
-                <!-- Let's put DOWN button below the grid using flex to allow grid to be compact -->
             </div>
-             <!-- Separate Down Button aligned with grid -->
+             <!-- Down -->
              <div class="w-full max-w-[320px] grid grid-cols-3 gap-3 -mt-4">
                  <div class="col-start-2">
-                    <button ontouchstart="handleBtn(event, 'DOWN')" onmousedown="handleBtn(event, 'DOWN')"
-                        class="btn-3a d-btn w-full">
+                    <button ontouchstart="handleBtn(event, 'DOWN')" onmousedown="handleBtn(event, 'DOWN')" class="btn-3a d-btn w-full">
                         <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
                  </div>
              </div>
 
-            <!-- ACTION BUTTON (CAST / REEL) -->
+            <!-- ACTION BUTTON -->
             <button id="action-btn" ontouchstart="handleBtn(event, 'CLICK')" onmousedown="handleBtn(event, 'CLICK')"
                 class="btn-3a w-40 h-40 rounded-full bg-gradient-to-br from-red-500 to-red-700 border-4 border-red-400/50 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(220,38,38,0.4)] animate-pulse-glow mt-4">
                 <span class="text-3xl font-black tracking-widest drop-shadow-lg">動作</span>
                 <span class="text-xs font-bold text-red-200 mt-1 tracking-widest uppercase opacity-80">拋竿 / 收竿</span>
                 
-                <!-- Shine effect -->
                 <div class="absolute inset-0 w-full h-full rounded-full overflow-hidden">
                     <div class="absolute top-0 left-[-50%] w-[200%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shine pointer-events-none rotate-45"></div>
                 </div>
@@ -181,7 +168,6 @@
 
         </div>
 
-        <!-- FOOTER INFO -->
         <div class="text-center mt-2">
             <p id="queue-pos" class="text-gray-400 font-mono text-xs font-bold">排隊位置: 計算中...</p>
         </div>
@@ -192,7 +178,7 @@
         const WS_URL = "wss://fishing-ws-server.onrender.com";
         let ws;
         let myName = "";
-        let myId = null; // Store server-assigned ID
+        let myId = null;
         let isMyTurn = false;
 
         const loginScreen = document.getElementById('login-screen');
@@ -205,19 +191,13 @@
         function joinGame() {
             const input = document.getElementById('username');
             const name = input.value.trim().toUpperCase();
-            
             if (!name) {
-                input.style.borderColor = "#ef4444"; // Red border
+                input.style.borderColor = "#ef4444";
                 return;
             }
-
             myName = name;
             playerNameDisplay.innerText = myName;
-            
-            // Connect WS
             connectWS();
-
-            // Switch Screen
             loginScreen.classList.add('hidden');
             controllerScreen.classList.remove('hidden');
             controllerScreen.classList.add('flex');
@@ -226,10 +206,8 @@
         function connectWS() {
             try {
                 ws = new WebSocket(WS_URL);
-
                 ws.onopen = () => {
                     console.log("Connected");
-                    // Register as controller
                     if (ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ 
                             type: 'REGISTER_CONTROLLER', 
@@ -237,7 +215,6 @@
                         }));
                     }
                 };
-
                 ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
@@ -246,47 +223,27 @@
                         console.error("Data Error", e);
                     }
                 };
-
                 ws.onclose = () => {
-                    console.log("WS Closed");
                     statusBadge.innerText = "離線";
                     statusBadge.className = "px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/50 text-red-300 font-bold text-sm uppercase";
-                    // Retry
                     setTimeout(connectWS, 2000);
                 };
-                
-                ws.onerror = (e) => {
-                    console.error("WS Error", e);
-                };
-
             } catch (e) {
                 alert("連線失敗: " + e.message);
             }
         }
 
         function handleServerMessage(data) {
-            // New: Handle ID Registration
             if (data.type === 'REGISTERED') {
                 myId = data.payload.id;
-                console.log("My Controller ID:", myId);
-                // Update UI to show connection success
                 statusBadge.innerText = "已連線";
                 statusBadge.className = "px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-blue-300 font-bold text-sm uppercase";
             }
 
             if (data.type === 'QUEUE_UPDATE' && Array.isArray(data.payload)) {
                 const queue = data.payload;
-                // Try to find index by ID first, then by Name as fallback
                 let myIndex = -1;
-                
-                if (myId) {
-                    myIndex = queue.findIndex(p => p.id === myId);
-                }
-                
-                if (myIndex === -1) {
-                     myIndex = queue.findIndex(p => p.name === myName);
-                }
-                
+                if (myId) myIndex = queue.findIndex(p => p.id === myId);
                 if (myIndex === -1 && !isMyTurn) {
                     queuePosDisplay.innerText = "狀態: 觀戰中";
                 } else if (myIndex >= 0) {
@@ -294,62 +251,41 @@
                 }
             } 
             
-            // ROBUST TURN CHECKING: Check ID first, fallback to Name
+            // SIMPLIFIED & ROBUST TURN CHECK
             if (data.type === 'CURRENT_PLAYER_ID') {
                 const turnId = data.payload;
-                if (myId && turnId) {
-                    const formerlyTurn = isMyTurn;
-                    isMyTurn = (turnId === myId);
-                    if (formerlyTurn !== isMyTurn) updateUIState(isMyTurn);
-                    return; // Exit if handled by ID
-                }
-            }
-
-            // Fallback for older servers or missing IDs
-            if (data.type === 'CURRENT_PLAYER') {
-                const currentPlayerName = data.payload;
-                // Only run this check if we haven't confirmed by ID yet
-                if (!myId) {
-                    const formerlyTurn = isMyTurn;
-                    isMyTurn = (currentPlayerName === myName);
-                    if (formerlyTurn !== isMyTurn) updateUIState(isMyTurn);
+                // If we have our ID, we rely on ID match
+                if (myId) {
+                    const shouldBeActive = (turnId === myId);
+                    if (isMyTurn !== shouldBeActive) {
+                        isMyTurn = shouldBeActive;
+                        updateUIState(isMyTurn);
+                    }
                 }
             }
         }
 
         function updateUIState(active) {
             if (active) {
-                // ACTIVE STATE
                 controlsContainer.classList.remove('opacity-50', 'pointer-events-none');
                 statusBadge.className = "px-4 py-2 rounded-lg bg-green-500/20 border border-green-500/50 text-green-300 font-bold text-sm uppercase animate-pulse-glow shadow-[0_0_15px_rgba(34,197,94,0.4)]";
                 statusBadge.innerText = "輪到你了";
-                
-                // Haptic Feedback (Success)
                 safeVibrate([100, 50, 100]);
             } else {
-                // WAITING STATE
                 controlsContainer.classList.add('opacity-50', 'pointer-events-none');
                 statusBadge.className = "px-4 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/50 text-yellow-300 font-bold text-sm uppercase animate-pulse";
                 statusBadge.innerText = "排隊中";
             }
         }
 
-        // Unified handler for Mouse and Touch to prevent ghost clicks
         function handleBtn(e, action) {
-            // Prevent default to stop mouse emulation if touch
-            if (e.type === 'touchstart') {
-                e.preventDefault(); 
-            }
+            if (e.type === 'touchstart') e.preventDefault(); 
             sendAction(action);
         }
 
         function sendAction(actionType) {
             if (!ws || !isMyTurn || ws.readyState !== WebSocket.OPEN) return;
-
-            // Visual Feedback
             safeVibrate(30);
-
-            // Send standard action
             ws.send(JSON.stringify({
                 type: 'ACTION',
                 action: actionType
@@ -357,19 +293,10 @@
         }
 
         function safeVibrate(pattern) {
-            try {
-                if (navigator && navigator.vibrate) {
-                    navigator.vibrate(pattern);
-                }
-            } catch (e) {
-                // Ignore vibration errors
-            }
+            try { if (navigator && navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
         }
 
-        // Prevent double tap zoom
-        document.addEventListener('dblclick', function(event) {
-            event.preventDefault();
-        }, { passive: false });
+        document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
     </script>
 </body>
 </html>
