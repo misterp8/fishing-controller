@@ -168,8 +168,9 @@
 
         </div>
 
-        <div class="text-center mt-2">
+        <div class="text-center mt-2 flex flex-col gap-1">
             <p id="queue-pos" class="text-gray-400 font-mono text-xs font-bold">排隊位置: 計算中...</p>
+            <p id="debug-id" class="text-gray-600 font-mono text-[10px]">ID: ...</p>
         </div>
 
     </div>
@@ -187,6 +188,7 @@
         const statusBadge = document.getElementById('status-badge');
         const queuePosDisplay = document.getElementById('queue-pos');
         const playerNameDisplay = document.getElementById('player-name-display');
+        const debugIdDisplay = document.getElementById('debug-id');
 
         function joinGame() {
             const input = document.getElementById('username');
@@ -236,6 +238,7 @@
         function handleServerMessage(data) {
             if (data.type === 'REGISTERED') {
                 myId = data.payload.id;
+                debugIdDisplay.innerText = "ID: " + myId.substring(0, 8) + "...";
                 statusBadge.innerText = "已連線";
                 statusBadge.className = "px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-blue-300 font-bold text-sm uppercase";
             }
@@ -251,16 +254,31 @@
                 }
             } 
             
-            // SIMPLIFIED & ROBUST TURN CHECK
+            // --- BACKUP: NAME MATCH FALLBACK ---
+            // If ID match fails (e.g. server restart with same names but new IDs), check name.
+            if (data.type === 'CURRENT_PLAYER') {
+                 const turnName = data.payload;
+                 // Only use name match if we are not already active
+                 if (!isMyTurn && myName && turnName === myName) {
+                      console.log("Fallback Name Match Activated");
+                      isMyTurn = true;
+                      updateUIState(true);
+                 }
+            }
+
+            // --- PRIMARY: ID MATCH ---
             if (data.type === 'CURRENT_PLAYER_ID') {
                 const turnId = data.payload;
-                // If we have our ID, we rely on ID match
-                if (myId) {
+                
+                // If turnId is null, NO ONE is playing
+                if (turnId === null) {
+                    isMyTurn = false;
+                    updateUIState(false);
+                } else if (myId) {
                     const shouldBeActive = (turnId === myId);
-                    if (isMyTurn !== shouldBeActive) {
-                        isMyTurn = shouldBeActive;
-                        updateUIState(isMyTurn);
-                    }
+                    isMyTurn = shouldBeActive;
+                    // Always update UI to ensure sync
+                    updateUIState(isMyTurn);
                 }
             }
         }
@@ -284,6 +302,7 @@
         }
 
         function sendAction(actionType) {
+            // Safety check: Don't send if not turn, unless name match forced it
             if (!ws || !isMyTurn || ws.readyState !== WebSocket.OPEN) return;
             safeVibrate(30);
             ws.send(JSON.stringify({
