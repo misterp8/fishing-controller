@@ -192,6 +192,7 @@
         const WS_URL = "wss://fishing-ws-server.onrender.com";
         let ws;
         let myName = "";
+        let myId = null; // Store server-assigned ID
         let isMyTurn = false;
 
         const loginScreen = document.getElementById('login-screen');
@@ -264,14 +265,27 @@
         }
 
         function handleServerMessage(data) {
-            // First valid message means we are connected
-            if (statusBadge.innerText === "連線中..." || statusBadge.innerText === "離線") {
-                updateUIState(false); // Default to wait
+            // New: Handle ID Registration
+            if (data.type === 'REGISTERED') {
+                myId = data.payload.id;
+                console.log("My Controller ID:", myId);
+                // Update UI to show connection success
+                statusBadge.innerText = "已連線";
+                statusBadge.className = "px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-blue-300 font-bold text-sm uppercase";
             }
 
             if (data.type === 'QUEUE_UPDATE' && Array.isArray(data.payload)) {
                 const queue = data.payload;
-                const myIndex = queue.indexOf(myName);
+                // Try to find index by ID first, then by Name as fallback
+                let myIndex = -1;
+                
+                if (myId) {
+                    myIndex = queue.findIndex(p => p.id === myId);
+                }
+                
+                if (myIndex === -1) {
+                     myIndex = queue.findIndex(p => p.name === myName);
+                }
                 
                 if (myIndex === -1 && !isMyTurn) {
                     queuePosDisplay.innerText = "狀態: 觀戰中";
@@ -279,15 +293,26 @@
                     queuePosDisplay.innerText = `排隊順位: ${myIndex + 1}`;
                 }
             } 
-            else if (data.type === 'CURRENT_PLAYER') {
-                const currentPlayer = data.payload;
-                // Check if it's us
-                const formerlyTurn = isMyTurn;
-                isMyTurn = (currentPlayer === myName);
-                
-                // If turn state changed, update UI
-                if (formerlyTurn !== isMyTurn) {
-                    updateUIState(isMyTurn);
+            
+            // ROBUST TURN CHECKING: Check ID first, fallback to Name
+            if (data.type === 'CURRENT_PLAYER_ID') {
+                const turnId = data.payload;
+                if (myId && turnId) {
+                    const formerlyTurn = isMyTurn;
+                    isMyTurn = (turnId === myId);
+                    if (formerlyTurn !== isMyTurn) updateUIState(isMyTurn);
+                    return; // Exit if handled by ID
+                }
+            }
+
+            // Fallback for older servers or missing IDs
+            if (data.type === 'CURRENT_PLAYER') {
+                const currentPlayerName = data.payload;
+                // Only run this check if we haven't confirmed by ID yet
+                if (!myId) {
+                    const formerlyTurn = isMyTurn;
+                    isMyTurn = (currentPlayerName === myName);
+                    if (formerlyTurn !== isMyTurn) updateUIState(isMyTurn);
                 }
             }
         }
