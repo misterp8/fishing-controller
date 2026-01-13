@@ -183,6 +183,7 @@
         let myId = null;
         let isMyTurn = false;
         let activeId = null;
+        let vibrationInt = null;
 
         const loginScreen = document.getElementById('login-screen');
         const controllerScreen = document.getElementById('controller-screen');
@@ -275,6 +276,16 @@
                 } else {
                     isMyTurn = false;
                     updateUIState(false);
+                    stopPersistentVibrate(); // Safety: Stop vibration if I lost turn
+                }
+            }
+
+            // --- VIBRATION FEEDBACK ---
+            if (data.type === 'FEEDBACK') {
+                if (data.payload === 'VIBRATE_START') {
+                    startPersistentVibrate();
+                } else if (data.payload === 'VIBRATE_STOP') {
+                    stopPersistentVibrate();
                 }
             }
         }
@@ -321,6 +332,29 @@
 
         function safeVibrate(pattern) {
             try { if (navigator && navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+        }
+
+        // --- Persistent Vibration Logic ---
+        function startPersistentVibrate() {
+            if (vibrationInt) return; // Already running
+            console.log("Starting vibration loop");
+            
+            // Initial burst
+            safeVibrate(400); 
+            
+            // Loop: Vibrate 400ms every 500ms
+            vibrationInt = setInterval(() => {
+                safeVibrate(400);
+            }, 500);
+        }
+
+        function stopPersistentVibrate() {
+            if (vibrationInt) {
+                console.log("Stopping vibration loop");
+                clearInterval(vibrationInt);
+                vibrationInt = null;
+                safeVibrate(0); // Kill current vibration immediately
+            }
         }
 
         document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
