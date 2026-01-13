@@ -1,248 +1,57 @@
-
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fishing Controller</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background-color: #0f172a; 
-            color: white;
-            font-family: system-ui, -apple-system, sans-serif;
-            touch-action: none; /* Prevent zoom/scroll */
-        }
+<html>
+<body style="font-size:28px;text-align:center">
 
-        /* 3A Button Animations */
-        @keyframes shine-sweep {
-            0% { transform: translateX(-150%) skewX(-20deg); }
-            50%, 100% { transform: translateX(250%) skewX(-20deg); }
-        }
-        .animate-shine {
-            animation: shine-sweep 3s infinite ease-in-out;
-        }
+<h2 id="status">Enter your name</h2>
+<input id="nameInput" placeholder="English name">
+<button onclick="join()">Join</button>
 
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 15px rgba(56, 189, 248, 0.3), inset 0 0 10px rgba(56, 189, 248, 0.2); }
-            50% { box-shadow: 0 0 25px rgba(56, 189, 248, 0.6), inset 0 0 20px rgba(56, 189, 248, 0.4); }
-        }
-        .animate-pulse-glow {
-            animation: pulse-glow 2s infinite;
-        }
+<hr>
 
-        /* Glassmorphism Classes */
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
+<button id="left" onclick="send('left')">⬅️</button>
+<button id="right" onclick="send('right')">➡️</button>
+<br><br>
+<button id="cast" onclick="sendAction('cast')">🎣</button>
 
-        .btn-3a {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.15s ease-out;
-            box-shadow: 
-                0 10px 20px rgba(0,0,0,0.5),
-                inset 0 4px 4px rgba(255,255,255,0.3),
-                inset 0 -4px 4px rgba(0,0,0,0.2);
-        }
-        .btn-3a:active {
-            transform: scale(0.95) translateY(2px);
-            box-shadow: 
-                0 2px 10px rgba(0,0,0,0.5),
-                inset 0 4px 8px rgba(0,0,0,0.4);
-        }
-    </style>
-</head>
-<body class="h-screen w-screen flex flex-col items-center justify-center bg-[url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center">
-    
-    <!-- Dark Overlay -->
-    <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0"></div>
+<script>
+const ws = new WebSocket(
+  'wss://fishing-ws-server.onrender.com'
+);
 
-    <!-- CONNECTION / LOGIN SCREEN -->
-    <div id="login-screen" class="z-10 flex flex-col items-center gap-8 w-full max-w-md p-6 glass-panel rounded-3xl mx-4">
-        <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-blue-500 drop-shadow-lg tracking-tighter">
-            JOIN GAME
-        </h1>
-        <div class="w-full">
-            <input type="text" id="username" placeholder="Enter Your Name" 
-                class="w-full px-6 py-4 rounded-xl bg-black/40 border border-white/20 text-white placeholder-gray-500 text-xl font-bold focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition-all text-center uppercase tracking-wider">
-        </div>
-        <button onclick="joinGame()" class="btn-3a w-full py-5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-black text-2xl tracking-widest border border-white/20">
-            <span class="relative z-10">START</span>
-            <div class="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shine pointer-events-none"></div>
-        </button>
-    </div>
+let myName = '';
+let myTurn = false;
 
-    <!-- CONTROLLER SCREEN (Hidden by default) -->
-    <div id="controller-screen" class="hidden z-10 flex-col h-full w-full max-w-lg justify-between py-8 px-4">
-        
-        <!-- HEADER HUD -->
-        <div class="glass-panel rounded-2xl p-4 flex justify-between items-center mb-4">
-            <div class="flex flex-col">
-                <span class="text-xs text-cyan-300 font-bold tracking-widest uppercase">Player</span>
-                <span id="player-name-display" class="text-2xl font-black text-white">...</span>
-            </div>
-            <div id="status-badge" class="px-4 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/50 text-yellow-300 font-bold text-sm uppercase animate-pulse">
-                In Queue
-            </div>
-        </div>
+function join() {
+  myName = nameInput.value;
+  ws.send(JSON.stringify({ type:'join', name: myName }));
+}
 
-        <!-- MAIN CONTROLS AREA -->
-        <div id="controls-container" class="flex-1 flex flex-col justify-center gap-8 opacity-50 pointer-events-none transition-all duration-500">
-            
-            <!-- DIRECTIONAL PAD -->
-            <div class="flex justify-between gap-4">
-                <button ontouchstart="sendAction('LEFT')" onmousedown="sendAction('LEFT')"
-                    class="btn-3a flex-1 h-32 rounded-2xl bg-gradient-to-b from-slate-700 to-slate-800 border border-white/10 flex items-center justify-center active:bg-slate-700">
-                    <svg class="w-12 h-12 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-                
-                <button ontouchstart="sendAction('RIGHT')" onmousedown="sendAction('RIGHT')"
-                    class="btn-3a flex-1 h-32 rounded-2xl bg-gradient-to-b from-slate-700 to-slate-800 border border-white/10 flex items-center justify-center active:bg-slate-700">
-                    <svg class="w-12 h-12 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
-                </button>
-            </div>
+ws.onmessage = e => {
+  const data = JSON.parse(e.data);
+  if (data.type === 'state') {
+    myTurn = data.currentPlayer === myName;
+    status.innerText = myTurn
+      ? '🎉 Your Turn!'
+      : `⏳ Waiting… Now: ${data.currentPlayer}`;
+    setDisabled(!myTurn);
+  }
+};
 
-            <!-- ACTION BUTTON (CAST / REEL) -->
-            <button id="action-btn" ontouchstart="sendAction('CLICK')" onmousedown="sendAction('CLICK')"
-                class="btn-3a w-full aspect-square rounded-full bg-gradient-to-br from-red-500 to-red-700 border-4 border-red-400/50 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(220,38,38,0.4)] animate-pulse-glow">
-                <span class="text-5xl font-black italic tracking-tighter drop-shadow-lg">ACTION</span>
-                <span class="text-sm font-bold text-red-200 mt-2 tracking-widest uppercase opacity-80">Cast / Reel</span>
-                
-                <!-- Shine effect -->
-                <div class="absolute inset-0 w-full h-full rounded-full overflow-hidden">
-                    <div class="absolute top-0 left-[-50%] w-[200%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shine pointer-events-none rotate-45"></div>
-                </div>
-            </button>
+function setDisabled(disabled) {
+  ['left','right','cast'].forEach(id => {
+    document.getElementById(id).disabled = disabled;
+  });
+}
 
-        </div>
+function send(dir) {
+  if (!myTurn) return;
+  ws.send(JSON.stringify({ type:'control', action:'move', dir }));
+}
 
-        <!-- FOOTER INFO -->
-        <div class="text-center mt-4">
-            <p id="queue-pos" class="text-gray-400 font-mono text-sm">Position: Calculating...</p>
-        </div>
-
-    </div>
-
-    <script>
-        const WS_URL = "wss://fishing-ws-server.onrender.com";
-        let ws;
-        let myName = "";
-        let isMyTurn = false;
-
-        const loginScreen = document.getElementById('login-screen');
-        const controllerScreen = document.getElementById('controller-screen');
-        const controlsContainer = document.getElementById('controls-container');
-        const statusBadge = document.getElementById('status-badge');
-        const queuePosDisplay = document.getElementById('queue-pos');
-        const playerNameDisplay = document.getElementById('player-name-display');
-
-        function joinGame() {
-            const input = document.getElementById('username');
-            const name = input.value.trim().toUpperCase();
-            
-            if (!name) {
-                input.classList.add('border-red-500');
-                return;
-            }
-
-            myName = name;
-            playerNameDisplay.innerText = myName;
-            
-            // Connect WS
-            connectWS();
-
-            // Switch Screen
-            loginScreen.classList.add('hidden');
-            controllerScreen.classList.remove('hidden');
-            controllerScreen.classList.add('flex');
-        }
-
-        function connectWS() {
-            ws = new WebSocket(WS_URL);
-
-            ws.onopen = () => {
-                console.log("Connected");
-                // Register as controller
-                ws.send(JSON.stringify({ 
-                    type: 'REGISTER_CONTROLLER', 
-                    payload: { name: myName } 
-                }));
-            };
-
-            ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    handleServerMessage(data);
-                } catch (e) {
-                    console.error("Data Error", e);
-                }
-            };
-
-            ws.onclose = () => {
-                alert("Connection Lost. Please refresh.");
-                location.reload();
-            };
-        }
-
-        function handleServerMessage(data) {
-            if (data.type === 'QUEUE_UPDATE') {
-                const queue = data.payload;
-                const myIndex = queue.indexOf(myName);
-                
-                if (myIndex === -1 && !isMyTurn) {
-                    // Not in queue, maybe kicked or bug?
-                    queuePosDisplay.innerText = "Status: Spectating";
-                } else if (myIndex >= 0) {
-                    queuePosDisplay.innerText = `Queue Position: ${myIndex + 1}`;
-                }
-            } 
-            else if (data.type === 'CURRENT_PLAYER') {
-                const currentPlayer = data.payload;
-                isMyTurn = (currentPlayer === myName);
-                updateUIState(isMyTurn);
-            }
-        }
-
-        function updateUIState(active) {
-            if (active) {
-                // ACTIVE STATE
-                controlsContainer.classList.remove('opacity-50', 'pointer-events-none');
-                statusBadge.className = "px-4 py-2 rounded-lg bg-green-500/20 border border-green-500/50 text-green-300 font-bold text-sm uppercase animate-pulse-glow shadow-[0_0_15px_rgba(34,197,94,0.4)]";
-                statusBadge.innerText = "YOUR TURN";
-                
-                // Haptic Feedback
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-            } else {
-                // WAITING STATE
-                controlsContainer.classList.add('opacity-50', 'pointer-events-none');
-                statusBadge.className = "px-4 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/50 text-yellow-300 font-bold text-sm uppercase animate-pulse";
-                statusBadge.innerText = "IN QUEUE";
-            }
-        }
-
-        function sendAction(actionType) {
-            if (!ws || !isMyTurn) return;
-
-            // Visual Feedback
-            if (navigator.vibrate) navigator.vibrate(50);
-
-            // Send standard action
-            ws.send(JSON.stringify({
-                type: 'ACTION',
-                action: actionType
-            }));
-        }
-
-        // Prevent double tap zoom
-        document.addEventListener('dblclick', function(event) {
-            event.preventDefault();
-        }, { passive: false });
-    </script>
+function sendAction(act) {
+  if (!myTurn) return;
+  ws.send(JSON.stringify({ type:'control', action: act }));
+}
+</script>
 </body>
 </html>
