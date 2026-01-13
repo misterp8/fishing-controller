@@ -60,6 +60,7 @@
             box-shadow: 
                 0 2px 10px rgba(0,0,0,0.5),
                 inset 0 4px 8px rgba(0,0,0,0.4);
+            filter: brightness(1.2);
         }
 
         .d-pad-grid {
@@ -254,19 +255,7 @@
                 }
             } 
             
-            // --- BACKUP: NAME MATCH FALLBACK ---
-            // If ID match fails (e.g. server restart with same names but new IDs), check name.
-            if (data.type === 'CURRENT_PLAYER') {
-                 const turnName = data.payload;
-                 // Only use name match if we are not already active
-                 if (!isMyTurn && myName && turnName === myName) {
-                      console.log("Fallback Name Match Activated");
-                      isMyTurn = true;
-                      updateUIState(true);
-                 }
-            }
-
-            // --- PRIMARY: ID MATCH ---
+            // --- ID MATCH (Primary) ---
             if (data.type === 'CURRENT_PLAYER_ID') {
                 const turnId = data.payload;
                 
@@ -276,8 +265,9 @@
                     updateUIState(false);
                 } else if (myId) {
                     const shouldBeActive = (turnId === myId);
+                    // Force update to sync if server changed ID under us (Name Hijack)
+                    // Actually, if Name Hijack happens, we get a NEW ID via Register, so myId updates.
                     isMyTurn = shouldBeActive;
-                    // Always update UI to ensure sync
                     updateUIState(isMyTurn);
                 }
             }
@@ -298,17 +288,21 @@
 
         function handleBtn(e, action) {
             if (e.type === 'touchstart') e.preventDefault(); 
+            // Visual feedback handled by CSS active state
             sendAction(action);
         }
 
         function sendAction(actionType) {
-            // Safety check: Don't send if not turn, unless name match forced it
-            if (!ws || !isMyTurn || ws.readyState !== WebSocket.OPEN) return;
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            // Always vibrate on press attempt
             safeVibrate(30);
-            ws.send(JSON.stringify({
-                type: 'ACTION',
-                action: actionType
-            }));
+            
+            if (isMyTurn) {
+                ws.send(JSON.stringify({
+                    type: 'ACTION',
+                    action: actionType
+                }));
+            }
         }
 
         function safeVibrate(pattern) {
