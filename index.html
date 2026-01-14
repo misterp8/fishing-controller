@@ -202,20 +202,12 @@
             }
             myName = name;
             playerNameDisplay.innerText = myName;
-            // Store name in local storage so reload works if needed, though we want clean session
-            // localStorage.setItem('fish_username', myName);
             connectWS();
             loginScreen.classList.add('hidden');
             controllerScreen.classList.remove('hidden');
             controllerScreen.classList.add('flex');
         }
 
-        // Auto-login on reload if name exists? 
-        // User requested reload to switch player, so maybe we want them to re-join queue.
-        // If we want them to stay in queue but at back, we need to auto-join.
-        // But for "Next Player" logic, usually it's "Done with turn".
-        // Let's assume standard behavior: Reload -> Fresh Start -> User clicks Join.
-        // Or if we want seamless:
         window.onload = () => {
              const savedName = localStorage.getItem('fish_username');
              if (savedName) {
@@ -234,7 +226,7 @@
                             type: 'REGISTER_CONTROLLER', 
                             payload: { name: myName } 
                         }));
-                        localStorage.setItem('fish_username', myName); // Save for easier rejoin
+                        localStorage.setItem('fish_username', myName); 
                     }
                 };
                 ws.onmessage = (event) => {
@@ -260,17 +252,21 @@
             // 0. FORCE RELOAD (KICK)
             if (data.type === 'FORCE_RELOAD') {
                 console.log("Received Kick Command. Reloading...");
-                // Vibrate to notify user they are done
+                
+                // Visual feedback
+                statusBadge.innerText = "正在登出...";
+                statusBadge.className = "px-4 py-2 rounded-lg bg-orange-500/20 border border-orange-500/50 text-orange-300 font-bold text-sm uppercase";
                 safeVibrate([200, 100, 200]);
                 
-                // CRITICAL FIX: Prevent onclose from triggering auto-reconnect logic
+                // CRITICAL FIX: Remove onclose to prevent auto-reconnect loop
                 if (ws) {
-                    ws.onclose = null;
-                    ws.close();
+                    ws.onclose = null; 
                 }
 
-                // Force reload - replace keeps history clean
-                window.location.replace(window.location.href);
+                // Force hard reload to clear state and return to login
+                setTimeout(() => {
+                    window.location.reload();
+                }, 100); 
                 return;
             }
 
