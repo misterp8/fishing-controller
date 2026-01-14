@@ -202,11 +202,26 @@
             }
             myName = name;
             playerNameDisplay.innerText = myName;
+            // Store name in local storage so reload works if needed, though we want clean session
+            // localStorage.setItem('fish_username', myName);
             connectWS();
             loginScreen.classList.add('hidden');
             controllerScreen.classList.remove('hidden');
             controllerScreen.classList.add('flex');
         }
+
+        // Auto-login on reload if name exists? 
+        // User requested reload to switch player, so maybe we want them to re-join queue.
+        // If we want them to stay in queue but at back, we need to auto-join.
+        // But for "Next Player" logic, usually it's "Done with turn".
+        // Let's assume standard behavior: Reload -> Fresh Start -> User clicks Join.
+        // Or if we want seamless:
+        window.onload = () => {
+             const savedName = localStorage.getItem('fish_username');
+             if (savedName) {
+                 document.getElementById('username').value = savedName;
+             }
+        };
 
         function connectWS() {
             try {
@@ -219,6 +234,7 @@
                             type: 'REGISTER_CONTROLLER', 
                             payload: { name: myName } 
                         }));
+                        localStorage.setItem('fish_username', myName); // Save for easier rejoin
                     }
                 };
                 ws.onmessage = (event) => {
@@ -241,6 +257,15 @@
         }
 
         function handleServerMessage(data) {
+            // 0. FORCE RELOAD (KICK)
+            if (data.type === 'FORCE_RELOAD') {
+                console.log("Received Kick Command. Reloading...");
+                // Vibrate to notify user they are done
+                safeVibrate([200, 100, 200]);
+                window.location.reload();
+                return;
+            }
+
             // 1. REGISTRATION ACK
             if (data.type === 'REGISTERED') {
                 myId = data.payload.id;
@@ -249,22 +274,21 @@
                 updateDebug();
             }
 
-            // 2. UNIFIED STATE UPDATE (Replaces old QUEUE_UPDATE/CURRENT_PLAYER_ID)
+            // 2. UNIFIED STATE UPDATE
             if (data.type === 'STATE_UPDATE') {
                 const { queue, activePlayerId } = data.payload;
                 
-                // Update Active ID
                 activeId = activePlayerId;
                 updateDebug();
 
                 // Check if it's my turn
                 if (myId && activeId === myId) {
-                    if (!isMyTurn) { // Transition from Not Turn -> Turn
+                    if (!isMyTurn) { 
                         isMyTurn = true;
                         updateUIState(true);
                     }
                 } else {
-                    if (isMyTurn) { // Transition from Turn -> Not Turn
+                    if (isMyTurn) { 
                         isMyTurn = false;
                         updateUIState(false);
                         stopPersistentVibrate();
@@ -322,16 +346,14 @@
         }
 
         function sendAction(actionType) {
-            safeVibrate(30); // Feedback always
+            safeVibrate(30); 
             if (!ws || ws.readyState !== WebSocket.OPEN) return;
             
-            // Only send if turn
             if (isMyTurn) {
                 ws.send(JSON.stringify({
                     type: 'ACTION',
                     action: actionType
                 }));
-                // Visual flash on debug
                 debugInfo.style.color = '#fff';
                 setTimeout(() => debugInfo.style.color = '', 100);
             }
@@ -343,13 +365,9 @@
 
         // --- Persistent Vibration Logic ---
         function startPersistentVibrate() {
-            if (vibrationInt) return; // Already running
+            if (vibrationInt) return; 
             console.log("Starting vibration loop");
-            
-            // Initial burst
             safeVibrate(400); 
-            
-            // Loop: Vibrate 400ms every 500ms
             vibrationInt = setInterval(() => {
                 safeVibrate(400);
             }, 500);
@@ -360,7 +378,7 @@
                 console.log("Stopping vibration loop");
                 clearInterval(vibrationInt);
                 vibrationInt = null;
-                safeVibrate(0); // Kill current vibration immediately
+                safeVibrate(0); 
             }
         }
 
