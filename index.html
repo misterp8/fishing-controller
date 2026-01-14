@@ -262,7 +262,8 @@
                 console.log("Received Kick Command. Reloading...");
                 // Vibrate to notify user they are done
                 safeVibrate([200, 100, 200]);
-                window.location.reload();
+                // Force reload - replace keeps history clean
+                window.location.replace(window.location.href);
                 return;
             }
 
