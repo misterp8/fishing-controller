@@ -241,6 +241,7 @@
         }
 
         function handleServerMessage(data) {
+            // 1. REGISTRATION ACK
             if (data.type === 'REGISTERED') {
                 myId = data.payload.id;
                 statusBadge.innerText = "已連線";
@@ -248,39 +249,45 @@
                 updateDebug();
             }
 
-            if (data.type === 'QUEUE_UPDATE' && Array.isArray(data.payload)) {
-                const queue = data.payload;
-                let myIndex = -1;
-                if (myId) myIndex = queue.findIndex(p => p.id === myId);
+            // 2. UNIFIED STATE UPDATE (Replaces old QUEUE_UPDATE/CURRENT_PLAYER_ID)
+            if (data.type === 'STATE_UPDATE') {
+                const { queue, activePlayerId } = data.payload;
                 
+                // Update Active ID
+                activeId = activePlayerId;
+                updateDebug();
+
+                // Check if it's my turn
+                if (myId && activeId === myId) {
+                    if (!isMyTurn) { // Transition from Not Turn -> Turn
+                        isMyTurn = true;
+                        updateUIState(true);
+                    }
+                } else {
+                    if (isMyTurn) { // Transition from Turn -> Not Turn
+                        isMyTurn = false;
+                        updateUIState(false);
+                        stopPersistentVibrate();
+                    }
+                }
+
+                // Update Queue Info
+                let myIndex = -1;
+                if (myId && queue) myIndex = queue.findIndex(p => p.id === myId);
+
                 if (myIndex === 0) {
-                    // I am first!
-                    queuePosDisplay.innerText = "現在是你的回合！";
-                    queuePosDisplay.className = "text-green-400 font-black text-lg animate-pulse";
+                     queuePosDisplay.innerText = "現在是你的回合！";
+                     queuePosDisplay.className = "text-green-400 font-black text-lg animate-pulse";
                 } else if (myIndex > 0) {
                     queuePosDisplay.innerText = `排隊中: 第 ${myIndex + 1} 位`;
                     queuePosDisplay.className = "text-yellow-400 font-bold";
                 } else {
-                    queuePosDisplay.innerText = "狀態: 未在佇列中";
+                    queuePosDisplay.innerText = "狀態: 等待加入...";
                     queuePosDisplay.className = "text-gray-400";
-                }
-            } 
-            
-            if (data.type === 'CURRENT_PLAYER_ID') {
-                activeId = data.payload;
-                updateDebug();
-                
-                if (myId && activeId === myId) {
-                    isMyTurn = true;
-                    updateUIState(true);
-                } else {
-                    isMyTurn = false;
-                    updateUIState(false);
-                    stopPersistentVibrate(); // Safety: Stop vibration if I lost turn
                 }
             }
 
-            // --- VIBRATION FEEDBACK ---
+            // 3. VIBRATION FEEDBACK
             if (data.type === 'FEEDBACK') {
                 if (data.payload === 'VIBRATE_START') {
                     startPersistentVibrate();
