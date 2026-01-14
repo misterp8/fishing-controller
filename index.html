@@ -251,23 +251,26 @@
         function handleServerMessage(data) {
             // 0. FORCE RELOAD (KICK)
            if (data.type === 'FORCE_RELOAD') {
-    console.log("輪次結束，返回大廳");
+    console.log("✅ 輪次結束，準備登出");
     
-    // ✅ 清除記憶，避免自動重連
+    // ✅ 1. 清除記憶（最重要！）
     localStorage.removeItem('fish_username');
     
-    statusBadge.innerText = "輪次結束";
-    statusBadge.className = "px-4 py-2 rounded-lg bg-green-500/20 border border-green-500/50 text-green-300 font-bold text-sm uppercase";
-    safeVibrate([100, 50, 100, 50, 100]);
-    
+    // ✅ 2. 停止自動重連
     if (ws) {
-        ws.onclose = null; 
+        ws.onclose = null;
         ws.close();
     }
-
+    
+    // ✅ 3. 視覺回饋
+    statusBadge.innerText = "輪次結束";
+    statusBadge.className = "px-4 py-2 rounded-lg bg-green-500/20 border border-green-500/50 text-green-300 font-bold text-sm uppercase";
+    safeVibrate([100, 50, 100]);
+    
+    // ✅ 4. 延遲重載（給足夠時間）
     setTimeout(() => {
         window.location.reload();
-    }, 800); 
+    }, 800);
     return;
 }
 
