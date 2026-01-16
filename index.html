@@ -1,396 +1,727 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>釣魚控制器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🎣 釣魚遊戲控制台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background-color: #0f172a; 
-            color: white;
-            font-family: system-ui, -apple-system, "Microsoft JhengHei", sans-serif;
-            touch-action: none; 
+        /* 海洋主題漸變背景 */
+        .ocean-bg {
+            background: linear-gradient(180deg, 
+                #0c1929 0%, 
+                #1a3a5c 30%, 
+                #1e5f74 60%, 
+                #2a8496 100%);
         }
-
-        .bg-custom {
-            background-image: url('https://images.unsplash.com/photo-1518837695005-2083093ee35b?q=80&w=2070&auto=format&fit=crop');
-            background-size: cover;
-            background-position: center;
+        
+        /* 水波動畫 */
+        @keyframes wave {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
-
-        @keyframes shine-sweep {
-            0% { transform: translateX(-150%) skewX(-20deg); }
-            50%, 100% { transform: translateX(250%) skewX(-20deg); }
+        
+        .wave-animation {
+            animation: wave 3s ease-in-out infinite;
         }
-        .animate-shine {
-            animation: shine-sweep 3s infinite ease-in-out;
+        
+        /* 泡泡動畫 */
+        @keyframes bubble {
+            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            100% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
         }
-
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 15px rgba(56, 189, 248, 0.3), inset 0 0 10px rgba(56, 189, 248, 0.2); }
-            50% { box-shadow: 0 0 25px rgba(56, 189, 248, 0.6), inset 0 0 20px rgba(56, 189, 248, 0.4); }
+        
+        .bubble {
+            position: absolute;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.3));
+            border-radius: 50%;
+            animation: bubble linear forwards;
         }
-        .animate-pulse-glow {
-            animation: pulse-glow 2s infinite;
+        
+        /* 魚鱗效果 */
+        .fish-scale {
+            background: radial-gradient(ellipse at center, 
+                rgba(34, 211, 238, 0.3) 0%, 
+                transparent 70%);
         }
-
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        .btn-3a {
+        
+        /* 控制按鈕樣式 */
+        .control-btn {
             position: relative;
             overflow: hidden;
-            transition: all 0.1s ease-out;
-            box-shadow: 
-                0 10px 20px rgba(0,0,0,0.5),
-                inset 0 4px 4px rgba(255,255,255,0.3),
-                inset 0 -4px 4px rgba(0,0,0,0.2);
-            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s ease;
         }
-        .btn-3a:active {
-            transform: scale(0.95) translateY(2px);
-            box-shadow: 
-                0 2px 10px rgba(0,0,0,0.5),
-                inset 0 4px 8px rgba(0,0,0,0.4);
-            filter: brightness(1.2);
-        }
-
-        .d-pad-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 12px;
+        
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
             width: 100%;
-            max-width: 320px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
         }
-        .d-btn {
-            aspect-ratio: 1.5 / 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            background: linear-gradient(to bottom, #334155, #1e293b);
-            border: 1px solid rgba(255,255,255,0.1);
+        
+        .control-btn:hover::before {
+            left: 100%;
         }
-        .d-btn:active {
-            background: #475569;
+        
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* 方向按鈕特殊樣式 */
+        .dir-btn {
+            background: linear-gradient(145deg, #0891b2, #0e7490);
+            box-shadow: 0 4px 15px rgba(8, 145, 178, 0.4);
+        }
+        
+        .dir-btn:hover {
+            background: linear-gradient(145deg, #06b6d4, #0891b2);
+        }
+        
+        /* 動作按鈕樣式 */
+        .action-btn {
+            background: linear-gradient(145deg, #059669, #047857);
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
+        }
+        
+        .action-btn:hover {
+            background: linear-gradient(145deg, #10b981, #059669);
+        }
+        
+        .action-btn.cast {
+            background: linear-gradient(145deg, #ea580c, #c2410c);
+            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
+        }
+        
+        .action-btn.cast:hover {
+            background: linear-gradient(145deg, #f97316, #ea580c);
+        }
+        
+        .action-btn.reel {
+            background: linear-gradient(145deg, #7c3aed, #6d28d9);
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+        }
+        
+        .action-btn.reel:hover {
+            background: linear-gradient(145deg, #8b5cf6, #7c3aed);
+        }
+        
+        /* 學生列表樣式 */
+        .student-item {
+            transition: all 0.2s ease;
+        }
+        
+        .student-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .student-item.selected {
+            background: linear-gradient(90deg, rgba(34, 211, 238, 0.3), transparent);
+            border-left: 4px solid #22d3ee;
+        }
+        
+        .student-item.playing {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.3), transparent);
+            border-left: 4px solid #10b981;
+        }
+        
+        .student-item.played {
+            opacity: 0.6;
+        }
+        
+        /* 狀態指示器 */
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status-dot.connected { background: #10b981; }
+        .status-dot.disconnected { background: #ef4444; }
+        .status-dot.waiting { background: #f59e0b; }
+        
+        /* 震動反饋區域 */
+        .vibration-zone {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col items-center justify-center bg-custom">
+<body class="ocean-bg min-h-screen text-white overflow-hidden">
+    <!-- 泡泡背景 -->
+    <div id="bubble-container" class="fixed inset-0 pointer-events-none overflow-hidden z-0"></div>
     
-    <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0"></div>
-
-    <!-- CONNECTION / LOGIN SCREEN -->
-    <div id="login-screen" class="z-10 flex flex-col items-center gap-8 w-full max-w-md p-6 glass-panel rounded-3xl mx-4 transition-all duration-500">
-        <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-blue-500 drop-shadow-lg tracking-wider">
-            加入遊戲
-        </h1>
-        <div class="w-full">
-            <input type="text" id="username" placeholder="輸入您的名字" maxlength="8"
-                class="w-full px-6 py-4 rounded-xl bg-black/40 border border-white/20 text-white placeholder-gray-500 text-xl font-bold focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition-all text-center uppercase tracking-wider">
-        </div>
-        <button onclick="joinGame()" class="btn-3a w-full py-5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-black text-2xl tracking-widest border border-white/20">
-            <span class="relative z-10">開始</span>
-            <div class="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shine pointer-events-none"></div>
-        </button>
-    </div>
-
-    <!-- CONTROLLER SCREEN -->
-    <div id="controller-screen" class="hidden z-10 flex-col h-full w-full max-w-lg justify-between py-6 px-4">
-        
-        <!-- HEADER HUD -->
-        <div class="glass-panel rounded-2xl p-4 flex justify-between items-center mb-2">
-            <div class="flex flex-col">
-                <span class="text-xs text-cyan-300 font-bold tracking-widest uppercase">玩家</span>
-                <span id="player-name-display" class="text-2xl font-black text-white truncate max-w-[150px]">...</span>
+    <div class="relative z-10 flex h-screen">
+        <!-- 左側：學生列表 -->
+        <div class="w-72 bg-black/30 backdrop-blur-md border-r border-white/10 flex flex-col">
+            <div class="p-4 border-b border-white/10">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <span>👥</span> 學生名單
+                </h2>
+                <div class="flex items-center gap-2 mt-2">
+                    <div id="connection-status" class="status-dot disconnected"></div>
+                    <span id="status-text" class="text-sm text-gray-400">未連線</span>
+                    <span id="student-count" class="text-sm text-gray-400 ml-auto">0 人</span>
+                </div>
             </div>
-            <div id="status-badge" class="px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-blue-300 font-bold text-sm uppercase animate-pulse">
-                連線中...
-            </div>
-        </div>
-
-        <!-- MAIN CONTROLS AREA -->
-        <div id="controls-container" class="flex-1 flex flex-col items-center justify-center gap-6 opacity-50 pointer-events-none transition-all duration-500 w-full">
             
-            <div class="d-pad-grid">
-                <!-- Top -->
-                <div class="col-start-2">
-                    <button ontouchstart="handleBtn(event, 'UP')" onmousedown="handleBtn(event, 'UP')" class="btn-3a d-btn w-full">
-                        <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
-                    </button>
-                </div>
+            <!-- 搜尋框 -->
+            <div class="p-3">
+                <input type="text" id="search-input" placeholder="搜尋學生..."
+                    class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+            </div>
+            
+            <!-- 學生列表 -->
+            <div id="student-list" class="flex-1 overflow-y-auto p-3 space-y-2">
+                <div class="text-center text-gray-500 py-8">等待學生連線...</div>
+            </div>
+            
+            <!-- 控制按鈕 -->
+            <div class="p-3 border-t border-white/10 space-y-2">
+                <button id="btn-start-selected" disabled
+                    class="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                    🎮 開始選取學生
+                </button>
                 
-                <!-- Left -->
-                <div class="col-start-1 row-start-2">
-                    <button ontouchstart="handleBtn(event, 'LEFT')" onmousedown="handleBtn(event, 'LEFT')" class="btn-3a d-btn w-full">
-                        <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btn-release" disabled
+                        class="py-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        ⏹ 結束遊戲
                     </button>
-                </div>
-
-                <div class="col-start-2 row-start-2 flex items-center justify-center">
-                    <div class="w-4 h-4 rounded-full bg-white/20"></div>
-                </div>
-
-                <!-- Right -->
-                <div class="col-start-3 row-start-2">
-                    <button ontouchstart="handleBtn(event, 'RIGHT')" onmousedown="handleBtn(event, 'RIGHT')" class="btn-3a d-btn w-full">
-                        <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+                    <button id="btn-reset-all"
+                        class="py-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg font-bold text-sm hover:from-gray-500 hover:to-gray-600">
+                        🔄 重置全部
                     </button>
                 </div>
             </div>
-             <!-- Down -->
-             <div class="w-full max-w-[320px] grid grid-cols-3 gap-3 -mt-4">
-                 <div class="col-start-2">
-                    <button ontouchstart="handleBtn(event, 'DOWN')" onmousedown="handleBtn(event, 'DOWN')" class="btn-3a d-btn w-full">
-                        <svg class="w-10 h-10 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+        </div>
+        
+        <!-- 中間：遊戲控制區域 -->
+        <div class="flex-1 flex flex-col p-4">
+            <!-- 標題 -->
+            <div class="text-center mb-4">
+                <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500">
+                    🎣 釣魚遊戲控制台
+                </h1>
+                <p id="current-player" class="text-gray-400 mt-1">等待開始...</p>
+            </div>
+            
+            <!-- 控制面板 -->
+            <div class="flex-1 flex items-center justify-center">
+                <div class="bg-black/20 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+                    <!-- 方向控制 (2x2) -->
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div></div>
+                        <button id="btn-up" data-action="up" data-dir="up"
+                            class="control-btn dir-btn w-16 h-16 rounded-xl flex items-center justify-center text-2xl vibration-zone disabled:opacity-50">
+                            ⬆️
+                        </button>
+                        <div></div>
+                        
+                        <button id="btn-left" data-action="left" data-dir="left"
+                            class="control-btn dir-btn w-16 h-16 rounded-xl flex items-center justify-center text-2xl vibration-zone disabled:opacity-50">
+                            ⬅️
+                        </button>
+                        <div class="w-16 h-16 flex items-center justify-center">
+                            <div class="w-12 h-12 rounded-full bg-cyan-500/30 flex items-center justify-center">
+                                <span class="text-2xl">🎣</span>
+                            </div>
+                        </div>
+                        <button id="btn-right" data-action="right" data-dir="right"
+                            class="control-btn dir-btn w-16 h-16 rounded-xl flex items-center justify-center text-2xl vibration-zone disabled:opacity-50">
+                            ➡️
+                        </button>
+                        
+                        <div></div>
+                        <button id="btn-down" data-action="down" data-dir="down"
+                            class="control-btn dir-btn w-16 h-16 rounded-xl flex items-center justify-center text-2xl vibration-zone disabled:opacity-50">
+                            ⬇️
+                        </button>
+                        <div></div>
+                    </div>
+                    
+                    <!-- 動作按鈕 -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="btn-cast" data-action="cast"
+                            class="control-btn action-btn cast py-4 rounded-xl flex flex-col items-center gap-1 vibration-zone disabled:opacity-50">
+                            <span class="text-2xl">🏹</span>
+                            <span class="font-bold text-sm">拋竿</span>
+                        </button>
+                        <button id="btn-reel" data-action="reel"
+                            class="control-btn action-btn reel py-4 rounded-xl flex flex-col items-center gap-1 vibration-zone disabled:opacity-50">
+                            <span class="text-2xl">⬆️</span>
+                            <span class="font-bold text-sm">收竿</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 緊急停止 -->
+                    <button id="btn-emergency-stop"
+                        class="w-full mt-3 py-2 bg-red-600/50 hover:bg-red-600/70 rounded-lg text-sm font-bold transition-colors vibration-zone">
+                        🛑 緊急停止
                     </button>
-                 </div>
-             </div>
-
-            <!-- ACTION BUTTON -->
-            <button id="action-btn" ontouchstart="handleBtn(event, 'CLICK')" onmousedown="handleBtn(event, 'CLICK')"
-                class="btn-3a w-40 h-40 rounded-full bg-gradient-to-br from-red-500 to-red-700 border-4 border-red-400/50 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(220,38,38,0.4)] animate-pulse-glow mt-4">
-                <span class="text-3xl font-black tracking-widest drop-shadow-lg">動作</span>
-                <span class="text-xs font-bold text-red-200 mt-1 tracking-widest uppercase opacity-80">拋竿 / 收竿</span>
-                
-                <div class="absolute inset-0 w-full h-full rounded-full overflow-hidden">
-                    <div class="absolute top-0 left-[-50%] w-[200%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shine pointer-events-none rotate-45"></div>
                 </div>
-            </button>
-
+            </div>
+            
+            <!-- 底部狀態欄 -->
+            <div class="mt-4 flex items-center justify-between text-sm text-gray-400">
+                <div class="flex items-center gap-2">
+                    <span id="ws-status" class="px-2 py-1 bg-red-500/50 rounded text-xs">WebSocket: 離線</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="vibration-status">震動: 開</span>
+                    <span>FPS: <span id="fps">60</span></span>
+                </div>
+            </div>
         </div>
-
-        <div class="text-center mt-2 flex flex-col gap-1 p-2 bg-black/50 rounded text-xs">
-            <p id="queue-pos" class="text-gray-300 font-mono font-bold">...</p>
-            <p id="debug-info" class="text-gray-500 font-mono text-[10px]">Connecting...</p>
+        
+        <!-- 右側：日誌 -->
+        <div class="w-64 bg-black/20 backdrop-blur-md border-l border-white/10 flex flex-col">
+            <div class="p-3 border-b border-white/10">
+                <h3 class="font-bold flex items-center gap-2">
+                    <span>📋</span> 活動日誌
+                </h3>
+            </div>
+            <div id="log-container" class="flex-1 overflow-y-auto p-3 font-mono text-xs space-y-1">
+            </div>
         </div>
-
     </div>
 
     <script>
-        const WS_URL = "wss://fishing-ws-server.onrender.com";
-        let ws;
-        let myName = "";
-        let myId = null;
-        let isMyTurn = false;
-        let activeId = null;
-        let vibrationInt = null;
-
-        const loginScreen = document.getElementById('login-screen');
-        const controllerScreen = document.getElementById('controller-screen');
-        const controlsContainer = document.getElementById('controls-container');
-        const statusBadge = document.getElementById('status-badge');
-        const queuePosDisplay = document.getElementById('queue-pos');
-        const playerNameDisplay = document.getElementById('player-name-display');
-        const debugInfo = document.getElementById('debug-info');
-
-        function joinGame() {
-            const input = document.getElementById('username');
-            const name = input.value.trim().toUpperCase();
-            if (!name) {
-                input.style.borderColor = "#ef4444";
-                return;
+        // ===== 配置 =====
+        const WS_URL = 'wss://fishing-ws-server.onrender.com';
+        const VIBRATION_DURATION = 50; // 毫秒
+        
+        // ===== 狀態 =====
+        let ws = null;
+        let selectedStudentId = null;
+        let currentPlayerId = null;
+        let vibrationEnabled = true;
+        let lastActionTime = 0;
+        let frameCount = 0;
+        let lastFpsUpdate = Date.now();
+        
+        // ===== DOM 元素 =====
+        const connectionStatus = document.getElementById('connection-status');
+        const statusText = document.getElementById('status-text');
+        const studentCount = document.getElementById('student-count');
+        const studentList = document.getElementById('student-list');
+        const searchInput = document.getElementById('search-input');
+        const btnStartSelected = document.getElementById('btn-start-selected');
+        const btnRelease = document.getElementById('btn-release');
+        const currentPlayer = document.getElementById('current-player');
+        const wsStatus = document.getElementById('ws-status');
+        const logContainer = document.getElementById('log-container');
+        const vibrationStatus = document.getElementById('vibration-status');
+        const fpsDisplay = document.getElementById('fps');
+        
+        // ===== 初始化泡泡效果 =====
+        function createBubbles() {
+            const container = document.getElementById('bubble-container');
+            const bubbleCount = 20;
+            
+            for (let i = 0; i < bubbleCount; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                const size = Math.random() * 20 + 5;
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                bubble.style.left = `${Math.random() * 100}%`;
+                bubble.style.bottom = '-50px';
+                bubble.style.animationDuration = `${Math.random() * 10 + 10}s`;
+                bubble.style.animationDelay = `${Math.random() * 10}s`;
+                container.appendChild(bubble);
             }
-            myName = name;
-            playerNameDisplay.innerText = myName;
-            connectWS();
-            loginScreen.classList.add('hidden');
-            controllerScreen.classList.remove('hidden');
-            controllerScreen.classList.add('flex');
         }
-
-        window.onload = () => {
-             const savedName = localStorage.getItem('fish_username');
-             if (savedName) {
-                 document.getElementById('username').value = savedName;
-             }
-        };
-
-        function connectWS() {
+        createBubbles();
+        
+        // ===== 震動功能 =====
+        function vibrate(duration = VIBRATION_DURATION) {
+            if (!vibrationEnabled) return;
+            
+            // 嘗試使用 Vibration API
+            if (navigator.vibrate) {
+                navigator.vibrate(duration);
+            }
+            
+            // 也嘗試視覺反饋（觸覺模擬）
+            const btn = event.target.closest('.control-btn');
+            if (btn) {
+                btn.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    btn.style.transform = '';
+                }, 100);
+            }
+        }
+        
+        // ===== 日誌功能 =====
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const colors = {
+                info: 'text-gray-300',
+                success: 'text-green-400',
+                warning: 'text-yellow-400',
+                error: 'text-red-400',
+                action: 'text-cyan-400'
+            };
+            
+            const div = document.createElement('div');
+            div.className = `${colors[type] || 'text-gray-300'} border-l-2 border-white/10 pl-2`;
+            div.innerHTML = `<span class="text-gray-500">[${time}]</span> ${message}`;
+            logContainer.insertBefore(div, logContainer.firstChild);
+            
+            // 限制日誌數量
+            while (logContainer.children.length > 100) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+        
+        // ===== WebSocket 連線 =====
+        function connectWebSocket() {
+            log('正在連線到伺服器...', 'info');
+            
             try {
                 ws = new WebSocket(WS_URL);
+                
                 ws.onopen = () => {
-                    console.log("Connected");
-                    debugInfo.innerText = "WS Connected. Registering...";
-                    if (ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({ 
-                            type: 'REGISTER_CONTROLLER', 
-                            payload: { name: myName } 
-                        }));
-                        localStorage.setItem('fish_username', myName); 
-                    }
+                    log('已連線到伺服器', 'success');
+                    connectionStatus.className = 'status-dot connected';
+                    statusText.textContent = '已連線';
+                    wsStatus.textContent = 'WebSocket: 在線';
+                    wsStatus.className = 'px-2 py-1 bg-green-500/50 rounded text-xs';
+                    
+                    // 註冊為老師
+                    ws.send(JSON.stringify({
+                        type: 'register',
+                        role: 'teacher',
+                        name: '控制台'
+                    }));
+                    
+                    updateUI();
                 };
+                
                 ws.onmessage = (event) => {
                     try {
-                        const data = JSON.parse(event.data);
-                        handleServerMessage(data);
-                    } catch (e) {
-                        console.error("Data Error", e);
+                        const message = JSON.parse(event.data);
+                        handleMessage(message);
+                    } catch (err) {
+                        log(`訊息解析錯誤: ${err.message}`, 'error');
                     }
                 };
-                ws.onclose = () => {
-                    statusBadge.innerText = "離線";
-                    statusBadge.className = "px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/50 text-red-300 font-bold text-sm uppercase";
-                    debugInfo.innerText = "WS Closed. Reconnecting...";
-                    setTimeout(connectWS, 2000);
-                };
-            } catch (e) {
-                alert("連線失敗: " + e.message);
-            }
-        }
-
-        function handleServerMessage(data) {
-            // 0. FORCE RELOAD (KICK)
-           if (data.type === 'FORCE_RELOAD') {
-    console.log("✅ 輪次結束，準備登出");
-    
-    // ✅ 1. 清除記憶（最重要！）
-    localStorage.removeItem('fish_username');
-    
-    // ✅ 2. 停止自動重連
-    if (ws) {
-        ws.onclose = null;
-        ws.close();
-    }
-    
-    // ✅ 3. 視覺回饋
-    statusBadge.innerText = "輪次結束";
-    statusBadge.className = "px-4 py-2 rounded-lg bg-green-500/20 border border-green-500/50 text-green-300 font-bold text-sm uppercase";
-    safeVibrate([100, 50, 100]);
-    
-    // ✅ 4. 延遲重載（給足夠時間）
-    setTimeout(() => {
-        window.location.reload();
-    }, 800);
-    return;
-}
-
-            // 1. REGISTRATION ACK
-            if (data.type === 'REGISTERED') {
-                myId = data.payload.id;
-                statusBadge.innerText = "已連線";
-                statusBadge.className = "px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-blue-300 font-bold text-sm uppercase";
-                updateDebug();
-            }
-
-            // 2. UNIFIED STATE UPDATE
-            if (data.type === 'STATE_UPDATE') {
-                const { queue, activePlayerId } = data.payload;
                 
-                activeId = activePlayerId;
-                updateDebug();
-
-                // Check if it's my turn
-                if (myId && activeId === myId) {
-                    if (!isMyTurn) { 
-                        isMyTurn = true;
-                        updateUIState(true);
+                ws.onclose = () => {
+                    log('連線已斷開', 'warning');
+                    connectionStatus.className = 'status-dot disconnected';
+                    statusText.textContent = '已斷線';
+                    wsStatus.textContent =WebSocket: 離線';
+                    wsStatus.className = 'px-2 py-1 bg-red-500/50 rounded text-xs';
+                    
+                    // 嘗試重連
+                    setTimeout(connectWebSocket, 3000);
+                };
+                
+                ws.onerror = (err) => {
+                    log(`WebSocket 錯誤: ${err.message || '未知錯誤'}`, 'error');
+                };
+                
+            } catch (err) {
+                log(`連線失敗: ${err.message}`, 'error');
+                setTimeout(connectWebSocket, 3000);
+            }
+        }
+        
+        // ===== 處理訊息 =====
+        function handleMessage(message) {
+            switch (message.type) {
+                case 'teacher_registered':
+                    log('控制台註冊成功', 'success');
+                    if (message.students) {
+                        renderStudentList(message.students);
                     }
-                } else {
-                    if (isMyTurn) { 
-                        isMyTurn = false;
-                        updateUIState(false);
-                        stopPersistentVibrate();
+                    if (message.currentPlayer) {
+                        currentPlayerId = message.currentPlayer;
+                        updateCurrentPlayer();
                     }
-                }
-
-                // Update Queue Info
-                let myIndex = -1;
-                if (myId && queue) myIndex = queue.findIndex(p => p.id === myId);
-
-                if (myIndex === 0) {
-                     queuePosDisplay.innerText = "現在是你的回合！";
-                     queuePosDisplay.className = "text-green-400 font-black text-lg animate-pulse";
-                } else if (myIndex > 0) {
-                    queuePosDisplay.innerText = `排隊中: 第 ${myIndex + 1} 位`;
-                    queuePosDisplay.className = "text-yellow-400 font-bold";
-                } else {
-                    queuePosDisplay.innerText = "狀態: 等待加入...";
-                    queuePosDisplay.className = "text-gray-400";
-                }
-            }
-
-            // 3. VIBRATION FEEDBACK
-            if (data.type === 'FEEDBACK') {
-                if (data.payload === 'VIBRATE_START') {
-                    startPersistentVibrate();
-                } else if (data.payload === 'VIBRATE_STOP') {
-                    stopPersistentVibrate();
-                }
-            }
-        }
-
-        function updateDebug() {
-            const m = myId ? myId.substr(0,4) : '???';
-            const a = activeId ? activeId.substr(0,4) : '???';
-            debugInfo.innerText = `Me:${m} | Active:${a} | Turn:${isMyTurn}`;
-        }
-
-        function updateUIState(active) {
-            if (active) {
-                controlsContainer.classList.remove('opacity-50', 'pointer-events-none');
-                statusBadge.className = "px-4 py-2 rounded-lg bg-green-500/20 border border-green-500/50 text-green-300 font-bold text-sm uppercase animate-pulse-glow shadow-[0_0_15px_rgba(34,197,94,0.4)]";
-                statusBadge.innerText = "你的回合";
-                safeVibrate([100, 50, 100]);
-            } else {
-                controlsContainer.classList.add('opacity-50', 'pointer-events-none');
-                statusBadge.className = "px-4 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/50 text-yellow-300 font-bold text-sm uppercase animate-pulse";
-                statusBadge.innerText = "等待中";
+                    break;
+                    
+                case 'student_list':
+                    renderStudentList(message.students);
+                    break;
+                    
+                case 'player_started':
+                    currentPlayerId = message.playerId;
+                    log(`${message.playerName} 開始遊戲`, 'success');
+                    updateCurrentPlayer();
+                    updateUI();
+                    break;
+                    
+                case 'player_stopped':
+                    log('玩家停止遊戲', 'warning');
+                    currentPlayerId = null;
+                    updateCurrentPlayer();
+                    updateUI();
+                    break;
+                    
+                case 'player_disconnected':
+                    log(`玩家已斷線`, 'warning');
+                    if (currentPlayerId === message.playerId) {
+                        currentPlayerId = null;
+                        updateCurrentPlayer();
+                    }
+                    updateUI();
+                    break;
+                    
+                case 'game_state_update':
+                    // 同步遊戲狀態
+                    break;
+                    
+                case 'error':
+                    log(`錯誤: ${message.message}`, 'error');
+                    break;
             }
         }
-
-        function handleBtn(e, action) {
-            if (e.type === 'touchstart') e.preventDefault(); 
-            sendAction(action);
-        }
-
-        function sendAction(actionType) {
-            safeVibrate(30); 
-            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        
+        // ===== 渲染學生列表 =====
+        function renderStudentList(students) {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filtered = students.filter(s => 
+                s.name.toLowerCase().includes(searchTerm) || 
+                s.id.toLowerCase().includes(searchTerm)
+            );
             
-            if (isMyTurn) {
+            studentCount.textContent = `${students.length} 人`;
+            
+            if (filtered.length === 0) {
+                studentList.innerHTML = '<div class="text-center text-gray-500 py-8">沒有符合的學生</div>';
+                return;
+            }
+            
+            studentList.innerHTML = filtered.map(student => {
+                let classes = 'student-item flex items-center gap-3 p-3 rounded-lg cursor-pointer ';
+                let statusIcon = '';
+                
+                if (student.isCurrentPlayer) {
+                    classes += 'playing';
+                    statusIcon = '<span class="text-green-400">🎮 遊戲中</span>';
+                } else if (student.hasPlayed) {
+                    classes += 'played bg-white/5';
+                    statusIcon = '<span class="text-gray-500">✅ 已玩過</span>';
+                } else {
+                    classes += 'bg-white/5 hover:bg-white/10';
+                    statusIcon = '<span class="text-cyan-400">⏳ 等待中</span>';
+                }
+                
+                if (selectedStudentId === student.id) {
+                    classes += ' selected';
+                }
+                
+                return `
+                    <div class="${classes}" data-id="${student.id}">
+                        <div class="flex-1">
+                            <div class="font-bold">${student.name}</div>
+                            <div class="text-xs text-gray-400">ID: ${student.id}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-gray-400">${student.playCount} 次</div>
+                            ${statusIcon}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // 綁定點擊事件
+            studentList.querySelectorAll('.student-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const id = item.dataset.id;
+                    const student = students.find(s => s.id === id);
+                    
+                    if (student.isCurrentPlayer) return;
+                    
+                    selectedStudentId = selectedStudentId === id ? null : id;
+                    renderStudentList(students);
+                    updateUI();
+                });
+            });
+        }
+        
+        // ===== 更新UI狀態 =====
+        function updateUI() {
+            const hasSelection = selectedStudentId !== null;
+            const hasCurrentPlayer = currentPlayerId !== null;
+            
+            btnStartSelected.disabled = !hasSelection || hasCurrentPlayer;
+            btnStartSelected.textContent = hasCurrentPlayer 
+                ? '🎮 遊戲進行中...' 
+                : (hasSelection ? '🎮 開始選取學生' : '👈 請先選取學生');
+            
+            btnRelease.disabled = !hasCurrentPlayer;
+            
+            // 控制按鈕狀態
+            const controlBtns = document.querySelectorAll('.control-btn');
+            controlBtns.forEach(btn => {
+                btn.disabled = !hasCurrentPlayer;
+            });
+        }
+        
+        // ===== 更新當前玩家顯示 =====
+        function updateCurrentPlayer() {
+            if (currentPlayerId) {
+                currentPlayer.innerHTML = `<span class="text-green-400">🎮 ${currentPlayerId} 正在遊戲中</span>`;
+            } else {
+                currentPlayer.innerHTML = '<span class="text-gray-400">等待開始...</span>';
+            }
+        }
+        
+        // ===== 發送控制指令 =====
+        function sendAction(action, data = {}) {
+            const now = Date.now();
+            if (now - lastActionTime < 50) return; // 防止過快點擊
+            lastActionTime = now;
+            
+            if (!currentPlayerId) {
+                log('沒有玩家在線上', 'warning');
+                return;
+            }
+            
+            ws.send(JSON.stringify({
+                type: 'teacher_command',
+                command: 'send_action',
+                action: action,
+                actionData: data
+            }));
+            
+            log(`${action} ${JSON.stringify(data)}`, 'action');
+            vibrate(30);
+        }
+        
+        // ===== 事件監聽 =====
+        
+        // 搜尋學生
+        searchInput.addEventListener('input', (e) => {
+            const message = { type: 'student_list', students: [] };
+            ws.onmessage({ data: JSON.stringify(message) });
+        });
+        
+        // 開始選取學生
+        btnStartSelected.addEventListener('click', () => {
+            if (!selectedStudentId) return;
+            
+            ws.send(JSON.stringify({
+                type: 'teacher_command',
+                command: 'grant_control',
+                studentId: selectedStudentId
+            }));
+            
+            log(`指定 ${selectedStudentId} 開始遊戲`, 'success');
+            selectedStudentId = null;
+        });
+        
+        // 結束遊戲
+        btnRelease.addEventListener('click', () => {
+            ws.send(JSON.stringify({
+                type: 'teacher_command',
+                command: 'release_current'
+            }));
+            
+            log('結束當前遊戲', 'warning');
+        });
+        
+        // 重置全部
+        document.getElementById('btn-reset-all').addEventListener('click', () => {
+            if (confirm('確定要重置所有學生的遊戲狀態嗎？')) {
                 ws.send(JSON.stringify({
-                    type: 'ACTION',
-                    action: actionType
+                    type: 'teacher_command',
+                    command: 'clear_all'
                 }));
-                debugInfo.style.color = '#fff';
-                setTimeout(() => debugInfo.style.color = '', 100);
+                
+                log('已重置所有學生', 'success');
             }
-        }
-
-        function safeVibrate(pattern) {
-            try { if (navigator && navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
-        }
-
-        // --- Persistent Vibration Logic ---
-        function startPersistentVibrate() {
-            if (vibrationInt) return; 
-            console.log("Starting vibration loop");
-            safeVibrate(400); 
-            vibrationInt = setInterval(() => {
-                safeVibrate(400);
-            }, 500);
-        }
-
-        function stopPersistentVibrate() {
-            if (vibrationInt) {
-                console.log("Stopping vibration loop");
-                clearInterval(vibrationInt);
-                vibrationInt = null;
-                safeVibrate(0); 
+        });
+        
+        // 方向按鈕
+        document.querySelectorAll('[data-dir]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const dir = btn.dataset.dir;
+                sendAction('move', { direction: dir });
+            });
+        });
+        
+        // 拋竿按鈕
+        document.getElementById('btn-cast').addEventListener('click', () => {
+            sendAction('cast');
+        });
+        
+        // 收竿按鈕
+        document.getElementById('btn-reel').addEventListener('click', () => {
+            sendAction('reel');
+        });
+        
+        // 緊急停止
+        document.getElementById('btn-emergency-stop').addEventListener('click', () => {
+            if (confirm('確定要緊急停止遊戲嗎？')) {
+                ws.send(JSON.stringify({
+                    type: 'teacher_command',
+                    command: 'release_current'
+                }));
+                
+                log('緊急停止遊戲！', 'error');
+                vibrate(200);
             }
+        });
+        
+        // 鍵盤控制
+        document.addEventListener('keydown', (e) => {
+            if (!currentPlayerId) return;
+            
+            const keyActions = {
+                'ArrowUp': () => sendAction('move', { direction: 'up' }),
+                'ArrowDown': () => sendAction('move', { direction: 'down' }),
+                'ArrowLeft': () => sendAction('move', { direction: 'left' }),
+                'ArrowRight': () => sendAction('move', { direction: 'right' }),
+                'Space': () => sendAction('cast'),
+                'Enter': () => sendAction('reel')
+            };
+            
+            if (keyActions[e.key]) {
+                e.preventDefault();
+                keyActions[e.key]();
+            }
+        });
+        
+        // 震動開關
+        vibrationStatus.addEventListener('click', () => {
+            vibrationEnabled = !vibrationEnabled;
+            vibrationStatus.textContent = `震動: ${vibrationEnabled ? '開' : '關'}`;
+            log(`震動已${vibrationEnabled ? '開啟' : '關閉'}`, 'info');
+        });
+        
+        // FPS 計算
+        function updateFPS() {
+            frameCount++;
+            const now = Date.now();
+            if (now - lastFpsUpdate >= 1000) {
+                fpsDisplay.textContent = frameCount;
+                frameCount = 0;
+                lastFpsUpdate = now;
+            }
+            requestAnimationFrame(updateFPS);
         }
-
-        document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
+        updateFPS();
+        
+        // ===== 啟動 =====
+        connectWebSocket();
+        
+        // 初始化日誌
+        log('控制台已啟動', 'info');
+        log('正在連線到伺服器...', 'info');
     </script>
 </body>
 </html>
