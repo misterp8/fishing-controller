@@ -6,24 +6,59 @@
     <title>Fishing Controller</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { touch-action: none; user-select: none; -webkit-user-select: none; }
+        body { touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none; }
+        
+        /* 方向盤樣式 */
+        .d-pad-container {
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            aspect-ratio: 1/1;
+            width: 100%;
+            max-width: 16rem;
+        }
         .d-btn {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(4px);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.1s;
+            transition: background 0.1s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            border-radius: 0.5rem;
         }
         .d-btn:active {
             background: rgba(255, 255, 255, 0.4);
-            transform: scale(0.95);
+            transform: scale(0.92);
         }
+        
+        /* 主動作按鈕樣式 */
         .action-btn {
             background: linear-gradient(135deg, #3b82f6, #2563eb);
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 4px 20px rgba(37, 99, 235, 0.5);
+            transition: all 0.15s;
         }
-        .action-btn:active {
-            transform: scale(0.92);
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        .action-btn:active:not(:disabled) {
+            transform: scale(0.95);
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4);
+        }
+        .action-btn:disabled {
+            background: #475569;
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .action-btn.alert {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.6);
+            animation: pulse-red 1s infinite;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
     </style>
 </head>
@@ -42,64 +77,56 @@
         <p id="status-msg" class="mt-4 text-sm text-red-400 h-6"></p>
     </div>
 
-    <!-- 等待/控制畫面 -->
-    <div id="game-screen" class="hidden flex-1 flex flex-col relative">
+    <!-- 遊戲控制畫面 -->
+    <div id="game-screen" class="hidden flex-1 flex-col relative h-full w-full">
+        
         <!-- 頂部狀態列 -->
-        <div class="h-16 flex items-center justify-between px-4 bg-slate-800 border-b border-slate-700">
+        <div class="h-16 flex-shrink-0 flex items-center justify-between px-4 bg-slate-800 border-b border-slate-700 shadow-lg z-20">
             <div>
-                <span class="text-slate-400 text-xs">PLAYER</span>
-                <div id="display-name" class="font-bold text-lg">Guest</div>
+                <span class="text-slate-400 text-xs uppercase tracking-wider">PLAYER</span>
+                <div id="display-name" class="font-bold text-lg leading-none pt-1">Guest</div>
             </div>
-            <div id="status-badge" class="px-3 py-1 rounded-full text-sm font-bold bg-yellow-600 text-yellow-100 animate-pulse">
-                排隊中...
+            <div id="status-badge" class="px-4 py-1.5 rounded-full text-sm font-bold bg-yellow-600 text-yellow-100 animate-pulse shadow-lg">
+                等待選取...
             </div>
         </div>
 
-        <!-- 遊戲訊息提示 (例如：輪到你了) -->
-        <div id="toast" class="absolute top-20 left-1/2 -translate-x-1/2 bg-blue-600 px-6 py-3 rounded-full shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none z-40 font-bold text-xl whitespace-nowrap">
-            輪到你了！
-        </div>
-
-        <!-- 遊戲區域 -->
-        <div class="flex-1 relative w-full h-full">
+        <!-- 控制區域 -->
+        <div class="flex-1 relative flex items-end justify-between px-6 pb-8 z-10">
             
-            <!-- 左側方向盤 -->
-            <div class="absolute left-4 bottom-8 w-48 h-48">
-                <div class="grid grid-cols-3 grid-rows-3 w-full h-full gap-1">
+            <!-- 左側：方向盤 (修正為更穩定的 Grid 佈局) -->
+            <div class="flex items-center justify-center w-1/2">
+                <div class="d-pad-container grid gap-2 w-full max-w-[200px] h-full max-h-[200px]">
                     <div></div>
-                    <button ontouchstart="sendMove('UP', true)" ontouchend="sendMove('UP', false)" 
-                            onmousedown="sendMove('UP', true)" onmouseup="sendMove('UP', false)" 
-                            class="d-btn rounded-t-xl flex items-center justify-center text-2xl">▲</button>
+                    <button ontouchstart="handleInput('UP', true)" ontouchend="handleInput('UP', false)" 
+                            onmousedown="handleInput('UP', true)" onmouseup="handleInput('UP', false)" 
+                            class="d-btn rounded-t-lg shadow-lg">▲</button>
                     <div></div>
                     
-                    <button ontouchstart="sendMove('LEFT', true)" ontouchend="sendMove('LEFT', false)" 
-                            onmousedown="sendMove('LEFT', true)" onmouseup="sendMove('LEFT', false)" 
-                            class="d-btn rounded-l-xl flex items-center justify-center text-2xl">◀</button>
-                    <div class="flex items-center justify-center bg-slate-800/50 rounded-full">
-                        <div class="w-4 h-4 bg-slate-600 rounded-full"></div>
+                    <button ontouchstart="handleInput('LEFT', true)" ontouchend="handleInput('LEFT', false)" 
+                            onmousedown="handleInput('LEFT', true)" onmouseup="handleInput('LEFT', false)" 
+                            class="d-btn rounded-l-lg shadow-lg">◀</button>
+                    <div class="flex items-center justify-center">
+                        <div class="w-8 h-8 bg-slate-700 rounded-full shadow-inner"></div>
                     </div>
-                    <button ontouchstart="sendMove('RIGHT', true)" ontouchend="sendMove('RIGHT', false)" 
-                            onmousedown="sendMove('RIGHT', true)" onmouseup="sendMove('RIGHT', false)" 
-                            class="d-btn rounded-r-xl flex items-center justify-center text-2xl">▶</button>
+                    <button ontouchstart="handleInput('RIGHT', true)" ontouchend="handleInput('RIGHT', false)" 
+                            onmousedown="handleInput('RIGHT', true)" onmouseup="handleInput('RIGHT', false)" 
+                            class="d-btn rounded-r-lg shadow-lg">▶</button>
                     
                     <div></div>
-                    <button ontouchstart="sendMove('DOWN', true)" ontouchend="sendMove('DOWN', false)" 
-                            onmousedown="sendMove('DOWN', true)" onmouseup="sendMove('DOWN', false)" 
-                            class="d-btn rounded-b-xl flex items-center justify-center text-2xl">▼</button>
+                    <button ontouchstart="handleInput('DOWN', true)" ontouchend="handleInput('DOWN', false)" 
+                            onmousedown="handleInput('DOWN', true)" onmouseup="handleInput('DOWN', false)" 
+                            class="d-btn rounded-b-lg shadow-lg">▼</button>
                     <div></div>
                 </div>
             </div>
 
-            <!-- 右側動作鍵 (拋勾/釣起) -->
-            <div class="absolute right-4 bottom-12 w-32 flex flex-col gap-4 items-center">
-                <button id="reel-btn" onclick="sendReel()" disabled
-                        class="action-btn w-28 h-28 rounded-full flex flex-col items-center justify-center text-white font-bold disabled:opacity-30 disabled:grayscale">
-                    <span class="text-3xl mb-1">🎣</span>
-                    <span>釣起!</span>
-                </button>
-                <button id="cast-btn" onclick="sendCast()" disabled
-                        class="bg-gradient-to-br from-green-500 to-green-700 w-20 h-20 rounded-full flex items-center justify-center text-white font-bold shadow-lg disabled:opacity-30 disabled:grayscale animate-bounce">
-                    拋勾
+            <!-- 右側：主動作按鈕 (整合拋勾與釣起) -->
+            <div class="flex items-center justify-center w-1/2">
+                <button id="main-action-btn" onclick="sendInteract()" disabled
+                        class="action-btn w-full max-w-[180px] aspect-square rounded-full flex flex-col items-center justify-center text-white font-bold select-none touch-manipulation">
+                    <span class="text-5xl mb-2">🎣</span>
+                    <span id="action-text" class="text-2xl">請等待</span>
                 </button>
             </div>
 
@@ -111,6 +138,7 @@
         let ws;
         let myName = '';
         let hasControl = false;
+        let currentGameState = null;
 
         function connect() {
             const nameInput = document.getElementById('username');
@@ -119,6 +147,7 @@
 
             if (!myName) {
                 statusMsg.innerText = "請輸入姓名";
+                vibrateError();
                 return;
             }
 
@@ -131,6 +160,7 @@
                 ws.send(JSON.stringify({ type: 'JOIN_STUDENT', name: myName }));
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('game-screen').classList.remove('hidden');
+                document.getElementById('game-screen').classList.add('flex');
                 document.getElementById('display-name').innerText = myName;
             };
 
@@ -141,6 +171,9 @@
                     setControlState(true);
                 } else if (data.type === 'CONTROL_REVOKED') {
                     setControlState(false);
+                } else if (data.type === 'GAME_STATE_UPDATE') {
+                    // 接收遊戲狀態更新
+                    updateGameStateUI(data.state, data.vibrate);
                 }
             };
 
@@ -151,43 +184,88 @@
 
             ws.onerror = (err) => {
                 console.error(err);
-                statusMsg.innerText = "連線失敗，請檢查網路";
-                statusMsg.className = "mt-4 text-sm text-red-400 h-6";
+                statusMsg.innerText = "連線失敗";
+                vibrateError();
             };
+        }
+
+        // 更新按鈕狀態與文字
+        function updateGameStateUI(state, shouldVibrate) {
+            currentGameState = state;
+            const btn = document.getElementById('main-action-btn');
+            const txt = document.getElementById('action-text');
+
+            if (shouldVibrate && hasControl) {
+                // 震動模式：短 長 短
+                navigator.vibrate([200, 100, 200]);
+            }
+
+            if (!hasControl) {
+                txt.innerText = "請等待";
+                btn.disabled = true;
+                btn.className = "action-btn w-full max-w-[180px] aspect-square rounded-full flex flex-col items-center justify-center text-white font-bold select-none touch-manipulation bg-slate-700";
+                return;
+            }
+
+            // 根據狀態切換按鈕
+            switch (state) {
+                case 'IDLE':
+                    txt.innerText = "拋勾";
+                    btn.disabled = false;
+                    btn.classList.remove('alert', 'bg-slate-700');
+                    break;
+                case 'CASTING':
+                case 'WAITING':
+                    txt.innerText = "等待中...";
+                    btn.disabled = true;
+                    btn.classList.add('bg-slate-700'); // 變灰
+                    break;
+                case 'BITING':
+                    txt.innerText = "釣起!";
+                    btn.disabled = false;
+                    btn.classList.remove('bg-slate-700');
+                    btn.classList.add('alert'); // 增加警示效果
+                    break;
+                case 'REELING':
+                case 'REWARD':
+                    txt.innerText = "回收中...";
+                    btn.disabled = true;
+                    btn.classList.remove('alert');
+                    btn.classList.add('bg-slate-700');
+                    break;
+                default:
+                    txt.innerText = "準備";
+                    btn.disabled = true;
+            }
         }
 
         function setControlState(active) {
             hasControl = active;
             const badge = document.getElementById('status-badge');
-            const castBtn = document.getElementById('cast-btn');
-            const reelBtn = document.getElementById('reel-btn');
-            const toast = document.getElementById('toast');
-
+            
             if (active) {
                 badge.innerText = "輪到你了!";
-                badge.className = "px-3 py-1 rounded-full text-sm font-bold bg-green-600 text-white shadow-lg shadow-green-500/50";
-                
-                // 震動
-                if (navigator.vibrate) {
-                    navigator.vibrate([200, 100, 200]);
-                }
-
-                toast.style.opacity = '1';
-                setTimeout(() => { toast.style.opacity = '0'; }, 3000);
-
-                castBtn.disabled = false;
-                reelBtn.disabled = false; // 根據遊戲邏輯可能需要客製化，但這裡先全部開啟
+                badge.className = "px-4 py-1.5 rounded-full text-sm font-bold bg-green-600 text-white shadow-lg shadow-green-500/50 border border-green-400";
+                // 如果獲得控制時，先重置 UI 為 IDLE (假設剛拿到控制通常是 IDLE)
+                updateGameStateUI(currentGameState || 'IDLE', false);
             } else {
-                badge.innerText = hasControl && ws.readyState === WebSocket.OPEN ? "暫停中" : "排隊中...";
-                badge.className = "px-3 py-1 rounded-full text-sm font-bold bg-yellow-600 text-yellow-100 animate-pulse";
-                
-                castBtn.disabled = true;
-                reelBtn.disabled = true;
+                badge.innerText = "排隊中...";
+                badge.className = "px-4 py-1.5 rounded-full text-sm font-bold bg-yellow-600 text-yellow-100 animate-pulse shadow-lg border border-yellow-500";
+                updateGameStateUI(null, false);
             }
         }
 
+        // 處理按鈕按下
         function sendAction(actionType, payload = {}) {
-            if (!hasControl || !ws) return;
+            if (!hasControl || !ws || ws.readyState !== WebSocket.OPEN) return;
+            
+            // 只有在允許的狀態下才發送 INTERACT (雖然 Server 也有檢查，但這裡做雙重保護比較好)
+            if (actionType === 'INTERACT') {
+                if (currentGameState === 'CASTING' || currentGameState === 'WAITING' || currentGameState === 'REELING') {
+                    return; // 這些狀態下不應該能按
+                }
+            }
+
             ws.send(JSON.stringify({
                 type: 'GAME_ACTION',
                 action: actionType,
@@ -195,21 +273,22 @@
             }));
         }
 
-        // 按鍵邏輯
-        function sendCast() {
-            sendAction('CAST');
+        // 主動作按鈕 (拋勾/釣起)
+        function sendInteract() {
+            sendAction('INTERACT');
         }
 
-        function sendReel() {
-            sendAction('REEL');
-        }
-
-        function sendMove(direction, isPressed) {
+        // 方向鍵輸入
+        function handleInput(direction, isPressed) {
             if (isPressed) {
                 sendAction('MOVE_START', { dir: direction });
             } else {
                 sendAction('MOVE_END', { dir: direction });
             }
+        }
+
+        function vibrateError() {
+            if (navigator.vibrate) navigator.vibrate(100);
         }
     </script>
 </body>
