@@ -3,187 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fishing Remote Control</title>
+    <title>Fishing Controller</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
-        .control-btn {
-            background: rgba(255, 255, 255, 0.2);
+        body { touch-action: none; user-select: none; -webkit-user-select: none; }
+        .d-btn {
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(4px);
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.2);
             transition: all 0.1s;
         }
-        .control-btn:active { background: rgba(255, 255, 255, 0.5); transform: scale(0.95); }
+        .d-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
         .action-btn {
             background: linear-gradient(135deg, #3b82f6, #2563eb);
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
         }
-        .action-btn:active { background: linear-gradient(135deg, #2563eb, #1d4ed8); transform: scale(0.95); }
-        .dpad-row { display: flex; justify-content: center; gap: 15px; }
+        .action-btn:active {
+            transform: scale(0.92);
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        }
     </style>
 </head>
-<body class="bg-slate-900 h-screen w-screen flex flex-col items-center justify-between p-4 overflow-hidden text-white font-bold">
+<body class="bg-slate-900 text-white h-screen w-screen overflow-hidden flex flex-col font-sans">
 
-    <!-- Top Bar -->
-    <div class="w-full flex justify-between items-center bg-slate-800 p-3 rounded-xl shadow-lg z-10">
-        <div>
-            <p class="text-xs text-slate-400">STATUS</p>
-            <p id="statusText" class="text-sm text-yellow-400">等待連線...</p>
-        </div>
-        <div class="text-right">
-            <p class="text-xs text-slate-400">PLAYER</p>
-            <p id="playerName" class="text-sm truncate max-w-[100px]">-</p>
-        </div>
+    <!-- 登入畫面 -->
+    <div id="login-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 p-6">
+        <h1 class="text-4xl font-bold mb-2 text-blue-400">釣魚遙控器</h1>
+        <p class="mb-8 text-slate-400">輸入姓名以加入遊戲</p>
+        <input type="text" id="username" placeholder="你的名字" 
+               class="w-full max-w-xs p-4 rounded-xl bg-slate-800 border border-slate-700 text-xl text-center focus:outline-none focus:border-blue-500 mb-6 text-white">
+        <button onclick="connect()" 
+                class="w-full max-w-xs py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xl shadow-lg transition-transform active:scale-95">
+            連線
+        </button>
+        <p id="status-msg" class="mt-4 text-sm text-red-400 h-6"></p>
     </div>
 
-    <!-- Connection Form -->
-    <div id="loginPanel" class="absolute inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center">
-        <h1 class="text-3xl mb-6 text-blue-400">釣魚遙控器</h1>
-        <input type="text" id="nameInput" placeholder="輸入姓名" class="p-3 rounded bg-slate-800 text-white text-center mb-4 w-64 outline-none border border-slate-600 focus:border-blue-400">
-        <button onclick="connect()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-full text-xl shadow-lg transition">連線</button>
-    </div>
-
-    <!-- Main Controls (Hidden until connected & active) -->
-    <div id="gameControls" class="hidden flex-col w-full h-full max-w-md justify-between py-4 opacity-50 transition-opacity duration-300">
-        
-        <!-- D-Pad -->
-        <div class="flex-1 flex flex-col justify-center">
-            <div class="dpad-row">
-                <div class="w-20 h-20 rounded-full control-btn" id="btn-up" data-key="up">
-                    <div class="w-full h-full flex items-center justify-center text-2xl">▲</div>
-                </div>
+    <!-- 等待/控制畫面 -->
+    <div id="game-screen" class="hidden flex-1 flex flex-col relative">
+        <!-- 頂部狀態列 -->
+        <div class="h-16 flex items-center justify-between px-4 bg-slate-800 border-b border-slate-700">
+            <div>
+                <span class="text-slate-400 text-xs">PLAYER</span>
+                <div id="display-name" class="font-bold text-lg">Guest</div>
             </div>
-            <div class="dpad-row mt-4">
-                <div class="w-20 h-20 rounded-full control-btn" id="btn-left" data-key="left">
-                    <div class="w-full h-full flex items-center justify-center text-2xl">◀</div>
-                </div>
-                <div class="w-20 h-20 rounded-full control-btn" id="btn-down" data-key="down">
-                    <div class="w-full h-full flex items-center justify-center text-2xl">▼</div>
-                </div>
-                <div class="w-20 h-20 rounded-full control-btn" id="btn-right" data-key="right">
-                    <div class="w-full h-full flex items-center justify-center text-2xl">▶</div>
-                </div>
+            <div id="status-badge" class="px-3 py-1 rounded-full text-sm font-bold bg-yellow-600 text-yellow-100 animate-pulse">
+                排隊中...
             </div>
         </div>
 
-        <!-- Action Button -->
-        <div class="flex-1 flex items-center justify-center pb-8">
-            <div id="btn-action" class="w-40 h-40 rounded-full action-btn flex items-center justify-center text-2xl text-white shadow-2xl select-none">
-                <div class="text-center">
-                    <div>CAST</div>
-                    <div class="text-sm opacity-80">(ACTION)</div>
-                </div>
-            </div>
+        <!-- 遊戲訊息提示 (例如：輪到你了) -->
+        <div id="toast" class="absolute top-20 left-1/2 -translate-x-1/2 bg-blue-600 px-6 py-3 rounded-full shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none z-40 font-bold text-xl whitespace-nowrap">
+            輪到你了！
         </div>
 
+        <!-- 遊戲區域 -->
+        <div class="flex-1 relative w-full h-full">
+            
+            <!-- 左側方向盤 -->
+            <div class="absolute left-4 bottom-8 w-48 h-48">
+                <div class="grid grid-cols-3 grid-rows-3 w-full h-full gap-1">
+                    <div></div>
+                    <button ontouchstart="sendMove('UP', true)" ontouchend="sendMove('UP', false)" 
+                            onmousedown="sendMove('UP', true)" onmouseup="sendMove('UP', false)" 
+                            class="d-btn rounded-t-xl flex items-center justify-center text-2xl">▲</button>
+                    <div></div>
+                    
+                    <button ontouchstart="sendMove('LEFT', true)" ontouchend="sendMove('LEFT', false)" 
+                            onmousedown="sendMove('LEFT', true)" onmouseup="sendMove('LEFT', false)" 
+                            class="d-btn rounded-l-xl flex items-center justify-center text-2xl">◀</button>
+                    <div class="flex items-center justify-center bg-slate-800/50 rounded-full">
+                        <div class="w-4 h-4 bg-slate-600 rounded-full"></div>
+                    </div>
+                    <button ontouchstart="sendMove('RIGHT', true)" ontouchend="sendMove('RIGHT', false)" 
+                            onmousedown="sendMove('RIGHT', true)" onmouseup="sendMove('RIGHT', false)" 
+                            class="d-btn rounded-r-xl flex items-center justify-center text-2xl">▶</button>
+                    
+                    <div></div>
+                    <button ontouchstart="sendMove('DOWN', true)" ontouchend="sendMove('DOWN', false)" 
+                            onmousedown="sendMove('DOWN', true)" onmouseup="sendMove('DOWN', false)" 
+                            class="d-btn rounded-b-xl flex items-center justify-center text-2xl">▼</button>
+                    <div></div>
+                </div>
+            </div>
+
+            <!-- 右側動作鍵 (拋勾/釣起) -->
+            <div class="absolute right-4 bottom-12 w-32 flex flex-col gap-4 items-center">
+                <button id="reel-btn" onclick="sendReel()" disabled
+                        class="action-btn w-28 h-28 rounded-full flex flex-col items-center justify-center text-white font-bold disabled:opacity-30 disabled:grayscale">
+                    <span class="text-3xl mb-1">🎣</span>
+                    <span>釣起!</span>
+                </button>
+                <button id="cast-btn" onclick="sendCast()" disabled
+                        class="bg-gradient-to-br from-green-500 to-green-700 w-20 h-20 rounded-full flex items-center justify-center text-white font-bold shadow-lg disabled:opacity-30 disabled:grayscale animate-bounce">
+                    拋勾
+                </button>
+            </div>
+
+        </div>
     </div>
 
     <script>
-        const WS_URL = 'wss://fishing-ws-server.onrender.com'; // 你的 WebSocket URL
-        let ws = null;
-        let playerName = '';
-        let isConnected = false;
-        let isControlActive = false;
-
-        // DOM Elements
-        const loginPanel = document.getElementById('loginPanel');
-        const gameControls = document.getElementById('gameControls');
-        const statusText = document.getElementById('statusText');
-        const playerNameDisplay = document.getElementById('playerName');
-        const nameInput = document.getElementById('nameInput');
+        const WS_URL = 'wss://fishing-ws-server.onrender.com';
+        let ws;
+        let myName = '';
+        let hasControl = false;
 
         function connect() {
-            playerName = nameInput.value.trim() || 'Student';
-            playerNameDisplay.innerText = playerName;
-            statusText.innerText = '連線中...';
-            statusText.className = 'text-sm text-yellow-400';
+            const nameInput = document.getElementById('username');
+            myName = nameInput.value.trim();
+            const statusMsg = document.getElementById('status-msg');
 
-            try {
-                ws = new WebSocket(WS_URL);
+            if (!myName) {
+                statusMsg.innerText = "請輸入姓名";
+                return;
+            }
 
-                ws.onopen = () => {
-                    isConnected = true;
-                    ws.send(JSON.stringify({ type: 'student_join', name: playerName }));
-                };
+            statusMsg.innerText = "連線中...";
+            statusMsg.className = "mt-4 text-sm text-blue-400 h-6";
 
-                ws.onmessage = (event) => {
-                    const msg = JSON.parse(event.data);
-                    
-                    if (msg.type === 'connected') {
-                        loginPanel.classList.add('hidden');
-                        gameControls.classList.remove('hidden');
-                        statusText.innerText = '等待老師選擇...';
-                    } 
-                    else if (msg.type === 'control_update') {
-                        isControlActive = msg.active;
-                        if (isControlActive) {
-                            statusText.innerText = '輪到你了！';
-                            statusText.className = 'text-sm text-green-400 font-bold animate-pulse';
-                            gameControls.classList.remove('opacity-50');
-                            gameControls.classList.add('opacity-100');
-                            // Play sound or vibrate on client side if supported outside WS
-                        } else {
-                            statusText.innerText = '等待中';
-                            statusText.className = 'text-sm text-yellow-400';
-                            gameControls.classList.add('opacity-50');
-                            gameControls.classList.remove('opacity-100');
-                        }
-                    }
-                    else if (msg.type === 'vibrate') {
-                        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                    }
-                };
+            ws = new WebSocket(WS_URL);
 
-                ws.onclose = () => {
-                    isConnected = false;
-                    statusText.innerText = '連線斷開 (重連中...)';
-                    setTimeout(connect, 3000);
-                };
+            ws.onopen = () => {
+                ws.send(JSON.stringify({ type: 'JOIN_STUDENT', name: myName }));
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('game-screen').classList.remove('hidden');
+                document.getElementById('display-name').innerText = myName;
+            };
 
-            } catch (e) {
-                console.error(e);
-                alert('連線失敗');
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'CONTROL_GRANTED') {
+                    setControlState(true);
+                } else if (data.type === 'CONTROL_REVOKED') {
+                    setControlState(false);
+                }
+            };
+
+            ws.onclose = () => {
+                alert("連線中斷，請重新整理頁面");
+                location.reload();
+            };
+
+            ws.onerror = (err) => {
+                console.error(err);
+                statusMsg.innerText = "連線失敗，請檢查網路";
+                statusMsg.className = "mt-4 text-sm text-red-400 h-6";
+            };
+        }
+
+        function setControlState(active) {
+            hasControl = active;
+            const badge = document.getElementById('status-badge');
+            const castBtn = document.getElementById('cast-btn');
+            const reelBtn = document.getElementById('reel-btn');
+            const toast = document.getElementById('toast');
+
+            if (active) {
+                badge.innerText = "輪到你了!";
+                badge.className = "px-3 py-1 rounded-full text-sm font-bold bg-green-600 text-white shadow-lg shadow-green-500/50";
+                
+                // 震動
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
+
+                toast.style.opacity = '1';
+                setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+
+                castBtn.disabled = false;
+                reelBtn.disabled = false; // 根據遊戲邏輯可能需要客製化，但這裡先全部開啟
+            } else {
+                badge.innerText = hasControl && ws.readyState === WebSocket.OPEN ? "暫停中" : "排隊中...";
+                badge.className = "px-3 py-1 rounded-full text-sm font-bold bg-yellow-600 text-yellow-100 animate-pulse";
+                
+                castBtn.disabled = true;
+                reelBtn.disabled = true;
             }
         }
 
-        // Input Handling
-        function sendAction(type, payload = {}) {
-            if (!isConnected || !isControlActive) return;
-            ws.send(JSON.stringify({ type: 'action', action: type, payload }));
+        function sendAction(actionType, payload = {}) {
+            if (!hasControl || !ws) return;
+            ws.send(JSON.stringify({
+                type: 'GAME_ACTION',
+                action: actionType,
+                ...payload
+            }));
         }
 
-        // Touch/Click Listeners for D-Pad
-        const dirButtons = document.querySelectorAll('[data-key]');
-        dirButtons.forEach(btn => {
-            const handleStart = (e) => {
-                e.preventDefault();
-                const key = btn.getAttribute('data-key');
-                sendAction('aim', { key, active: true });
-                if (navigator.vibrate) navigator.vibrate(50);
-            };
-            const handleEnd = (e) => {
-                e.preventDefault();
-                const key = btn.getAttribute('data-key');
-                sendAction('aim', { key, active: false });
-            };
+        // 按鍵邏輯
+        function sendCast() {
+            sendAction('CAST');
+        }
 
-            btn.addEventListener('mousedown', handleStart);
-            btn.addEventListener('touchstart', handleStart);
-            btn.addEventListener('mouseup', handleEnd);
-            btn.addEventListener('touchend', handleEnd);
-            btn.addEventListener('mouseleave', handleEnd);
-        });
+        function sendReel() {
+            sendAction('REEL');
+        }
 
-        // Action Button Listener
-        const actionBtn = document.getElementById('btn-action');
-        const handleActionStart = (e) => {
-            e.preventDefault();
-            sendAction('interact');
-            if (navigator.vibrate) navigator.vibrate(100);
-        };
-        actionBtn.addEventListener('mousedown', handleActionStart);
-        actionBtn.addEventListener('touchstart', handleActionStart);
-
+        function sendMove(direction, isPressed) {
+            if (isPressed) {
+                sendAction('MOVE_START', { dir: direction });
+            } else {
+                sendAction('MOVE_END', { dir: direction });
+            }
+        }
     </script>
 </body>
 </html>
