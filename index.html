@@ -12,10 +12,9 @@
             -webkit-user-select: none; 
             -webkit-tap-highlight-color: transparent; 
             overscroll-behavior: none;
-            background-color: #0f172a; /* Deep slate */
+            background-color: #0f172a; 
         }
         
-        /* 核心佈局容器 */
         .controller-layout {
             display: flex;
             width: 100%;
@@ -24,33 +23,54 @@
             transition: all 0.3s ease;
         }
 
-        /* [直向模式] 方向盤上，按鈕下 */
+        /* ==============================
+           直向模式：按鈕放大，上下排列
+           ============================== */
         @media (orientation: portrait) {
             .controller-layout {
                 flex-direction: column;
-                justify-content: space-between;
+                justify-content: center; /* 垂直置中，感覺比較不擁擠 */
                 align-items: center;
-                padding-top: 4rem;   /* 確保方向盤在上方，不會太貼頂部 */
-                padding-bottom: 2rem; /* 確保拋勾按鈕在下方，好大拇指操作 */
+                padding-top: 2rem;
+                padding-bottom: 2rem;
             }
             
             .d-pad-container {
-                margin-bottom: 2rem; /* 兩邊中間的間隙 */
+                width: 90%;       /* 佔滿大部分寬度 */
+                max-width: 380px;  /* 大幅放大最大寬限制 */
+                margin-bottom: 3rem; /* 與下方按鈕的間距 */
+            }
+
+            .d-btn {
+                font-size: 3.5rem; /* 箭頭圖示超級大，好按 */
+                border-radius: 0.5rem;
+            }
+            
+            .action-btn-wrapper {
+                max-width: 200px; /* 限制下方拋勾按鈕大小，太大會擋住上面 */
             }
         }
 
-        /* [橫向模式] 方向盤左，按鈕右 */
+        /* ==============================
+           橫向模式：原有大小，左右排列
+           ============================== */
         @media (orientation: landscape) {
             .controller-layout {
                 flex-direction: row;
                 justify-content: space-between;
                 align-items: center;
-                padding: 0 4rem;     /* 左右留白 */
+                padding: 0 4rem;
             }
 
             .d-pad-container {
-                max-width: 200px; /* 橫向時稍微縮小一點，避免佔滿 */
+                max-width: 200px; 
+                aspect-ratio: 1/1;
                 margin: 0;
+            }
+            
+            .d-btn {
+                font-size: 1.5rem; /* 橫向圖示小一點 */
+                border-radius: 0.5rem;
             }
             
             .action-btn-wrapper {
@@ -58,33 +78,28 @@
             }
         }
 
-        /* 方向盤樣式 */
+        /* 方向盤通用樣式 */
         .d-pad-container {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
-            aspect-ratio: 1/1;
-            width: 100%;
-            max-width: 16rem; /* Default size for portrait */
             touch-action: none; 
         }
         .d-btn {
             background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
             color: white;
-            border-radius: 0.5rem;
             cursor: pointer;
             transition: background 0.05s, transform 0.05s; 
         }
         .d-btn:active, .d-btn.active {
-            background: rgba(255, 255, 255, 0.6);
-            transform: scale(0.95);
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(0.92);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
         }
         
         .action-btn {
@@ -167,30 +182,30 @@
             </div>
         </div>
 
-        <!-- 布局容器：直向上下排列，橫向左右排列 -->
+        <!-- 佈局容器 -->
         <div class="controller-layout z-10 flex-1">
             
             <!-- 左側/上方：方向盤 -->
-            <div class="flex justify-center items-center flex-1">
-                <div class="d-pad-container grid gap-2">
+            <div class="flex justify-center items-center flex-1 w-full">
+                <div class="d-pad-container grid gap-3">
                     <div></div>
-                    <button id="btn-up" class="d-btn rounded-t-lg shadow-lg select-none">▲</button>
+                    <button id="btn-up" class="d-btn rounded-t-xl shadow-lg select-none">▲</button>
                     <div></div>
                     
-                    <button id="btn-left" class="d-btn rounded-l-lg shadow-lg select-none">◀</button>
-                    <div class="flex items-center justify-center">
+                    <button id="btn-left" class="d-btn rounded-l-xl shadow-lg select-none">◀</button>
+                    <div class="flex items-center justify-center bg-slate-800/20 rounded-xl">
                         <div class="w-8 h-8 bg-slate-700 rounded-full shadow-inner"></div>
                     </div>
-                    <button id="btn-right" class="d-btn rounded-r-lg shadow-lg select-none">▶</button>
+                    <button id="btn-right" class="d-btn rounded-r-xl shadow-lg select-none">▶</button>
                     
                     <div></div>
-                    <button id="btn-down" class="d-btn rounded-b-lg shadow-lg select-none">▼</button>
+                    <button id="btn-down" class="d-btn rounded-b-xl shadow-lg select-none">▼</button>
                     <div></div>
                 </div>
             </div>
 
             <!-- 右側/下方：主動作按鈕 -->
-            <div class="flex justify-center items-center flex-1 action-btn-wrapper">
+            <div class="flex justify-center items-center flex-1 w-full action-btn-wrapper">
                 <button id="main-action-btn" disabled
                         class="action-btn w-full aspect-square rounded-full flex flex-col items-center justify-center text-white font-bold select-none active:scale-95 transition-transform">
                     <span class="text-5xl mb-2 select-none">🎣</span>
@@ -249,7 +264,6 @@
                 if (data.type === 'CONTROL_GRANTED') {
                     console.log("Control Granted");
                     setControlState(true);
-                    // 獲得控制權時，強制發送一次停止指令，防止按鍵殘留
                     sendMove('UP', false); 
                     sendMove('DOWN', false);
                     sendMove('LEFT', false);
@@ -397,7 +411,6 @@
         function sendInteract() {
             if (!hasControl || !ws || ws.readyState !== WebSocket.OPEN) return;
             
-            // 移除本地檢查，全部交給 Server 判斷
             ws.send(JSON.stringify({
                 type: 'GAME_ACTION',
                 action: 'INTERACT'
