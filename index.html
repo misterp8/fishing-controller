@@ -3,299 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🎣 釣魚遙控器</title>
+    <title>釣魚遙控器</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        body { margin: 0; overflow: hidden; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%); }
-        
-        /* 按鈕樣式 */
-        .ctrl-btn {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.1s;
-        }
-        .ctrl-btn:active { transform: scale(0.95); }
-        .ctrl-btn.active { background: linear-gradient(145deg, #10b981, #059669); box-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
-        
-        /* 方向按鈕 */
-        .dir-btn {
-            background: linear-gradient(145deg, #0891b2, #0e7490);
-            box-shadow: 0 4px 15px rgba(8, 145, 178, 0.4);
-        }
-        .dir-btn:hover { background: linear-gradient(145deg, #06b6d4, #0891b2); }
-        
-        /* 動作按鈕 */
-        .cast-btn { background: linear-gradient(145deg, #ea580c, #c2410c); box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4); }
-        .cast-btn:hover { background: linear-gradient(145deg, #f97316, #ea580c); }
-        
-        .reel-btn { background: linear-gradient(145deg, #7c3aed, #6d28d9); box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); }
-        .reel-btn:hover { background: linear-gradient(145deg, #8b5cf6, #7c3aed); }
-        
-        /* 狀態指示器 */
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; animation: pulse 2s infinite; }
-        .status-dot.connected { background: #10b981; }
-        .status-dot.disconnected { background: #ef4444; }
-        .status-dot.waiting { background: #f59e0b; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        
-        /* 魚鰭動畫 */
-        .fin-animation { animation: fin-wag 0.5s ease-in-out infinite alternate; }
-        @keyframes fin-wag { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+        body { background-color: #111827; color: white; touch-action: manipulation; }
+        .btn:active { transform: scale(0.95); background-color: #2563eb; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col text-white">
-    <!-- 頂部狀態欄 -->
-    <div class="p-4 bg-black/30 backdrop-blur-md">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div id="status-dot" class="status-dot disconnected"></div>
-                <span id="status-text" class="font-bold">連線中...</span>
-            </div>
-            <div class="text-right">
-                <div id="my-id" class="text-xs text-gray-400">--</div>
-                <div id="player-name" class="text-sm text-cyan-400">等待連線...</div>
-            </div>
-        </div>
+<body class="h-screen flex flex-col items-center justify-center p-4 gap-6">
+
+    <!-- 登入 -->
+    <div id="login" class="flex flex-col gap-4 w-full max-w-xs">
+        <h1 class="text-3xl font-bold text-center text-cyan-400">🎣 釣魚大師</h1>
+        <input type="text" id="name" placeholder="輸入名字" class="p-4 bg-gray-700 rounded-xl text-center text-xl border border-gray-600 focus:border-cyan-400 outline-none">
+        <button onclick="connect()" class="bg-cyan-600 hover:bg-cyan-500 p-4 rounded-xl font-bold text-xl">連線</button>
     </div>
-    
-    <!-- 主要內容 -->
-    <div class="flex-1 flex items-center justify-center p-4">
-        <div class="bg-black/40 backdrop-blur-lg rounded-3xl p-6 border border-white/10">
-            <!-- 魚圖示 -->
-            <div class="text-center mb-6">
-                <div class="inline-block text-8xl relative">
-                    <span class="fin-animation absolute -top-2 -left-3 text-4xl">🐟</span>
-                    🎣
-                    <span class="fin-animation absolute -bottom-2 -right-3 text-4xl transform scale-x-[-1]">🐟</span>
-                </div>
-                <p id="game-status" class="mt-2 text-gray-400">等待老師指派...</p>
-            </div>
-            
-            <!-- 控制區域 -->
-            <div id="control-area" class="opacity-50 pointer-events-none">
-                <!-- 方向控制 -->
-                <div class="grid grid-cols-3 gap-2 mb-4">
-                    <div></div>
-                    <button id="btn-up" data-action="move" data-dir="up" class="ctrl-btn dir-btn w-16 h-16 rounded-xl text-2xl flex items-center justify-center">⬆️</button>
-                    <div></div>
-                    
-                    <button id="btn-left" data-action="move" data-dir="left" class="ctrl-btn dir-btn w-16 h-16 rounded-xl text-2xl flex items-center justify-center">⬅️</button>
-                    <div class="w-16 h-16 flex items-center justify-center">
-                        <div class="w-12 h-12 rounded-full bg-cyan-500/30 flex items-center justify-center">
-                            <span class="text-2xl">🎣</span>
-                        </div>
-                    </div>
-                    <button id="btn-right" data-action="move" data-dir="right" class="ctrl-btn dir-btn w-16 h-16 rounded-xl text-2xl flex items-center justify-center">➡️</button>
-                    
-                    <div></div>
-                    <button id="btn-down" data-action="move" data-dir="down" class="ctrl-btn dir-btn w-16 h-16 rounded-xl text-2xl flex items-center justify-center">⬇️</button>
-                    <div></div>
-                </div>
-                
-                <!-- 動作按鈕 -->
-                <div class="grid grid-cols-2 gap-3">
-                    <button id="btn-cast" data-action="cast" class="ctrl-btn cast-btn py-4 rounded-xl flex flex-col items-center gap-1">
-                        <span class="text-2xl">🏹</span>
-                        <span class="font-bold text-sm">拋竿</span>
-                    </button>
-                    <button id="btn-reel" data-action="reel" class="ctrl-btn reel-btn py-4 rounded-xl flex flex-col items-center gap-1">
-                        <span class="text-2xl">⬆️</span>
-                        <span class="font-bold text-sm">收竿</span>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- 未獲得控制權時的提示 -->
-            <div id="waiting-area" class="text-center py-4">
-                <div class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 rounded-full">
-                    <div class="w-2 h-2 bg-yellow-400 rounded-full animate-bounce"></div>
-                    <div class="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                    <div class="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                    <span class="text-sm text-yellow-400">等待老師指派...</span>
-                </div>
-            </div>
+
+    <!-- 遙控器 -->
+    <div id="remote" class="hidden w-full max-w-sm">
+        <div id="status" class="text-center text-yellow-400 font-bold mb-4 animate-pulse">等待老師挑選...</div>
+        <div class="grid grid-cols-3 gap-3 w-64 h-64 mx-auto relative">
+            <button onclick="send('CAST_UP')" class="bg-blue-600 rounded-xl shadow-[0_4px_0_#1d4ed8] active:shadow-none active:translate-y-1"></button>
+            <button onclick="send('CAST_LEFT')" class="bg-blue-600 rounded-xl shadow-[0_4px_0_#1d4ed8] active:shadow-none active:translate-y-1"></button>
+            <button onclick="send('REEL')" class="bg-red-600 rounded-full shadow-[0_4px_0_#b91c1c] active:shadow-none active:translate-y-1 text-3xl font-bold flex items-center justify-center">!</button>
+            <button onclick="send('CAST_RIGHT')" class="bg-blue-600 rounded-xl shadow-[0_4px_0_#1d4ed8] active:shadow-none active:translate-y-1"></button>
+            <button onclick="send('CAST_DOWN')" class="bg-blue-600 rounded-xl shadow-[0_4px_0_#1d4ed8] active:shadow-none active:translate-y-1"></button>
         </div>
-    </div>
-    
-    <!-- 底部說明 -->
-    <div class="p-4 text-center text-xs text-gray-500">
-        <p>🎮 點擊按鈕控制釣魚遊戲</p>
-        <p class="mt-1">支援手機震動回饋</p>
     </div>
 
     <script>
-        // ===== 配置 =====
-        const WS_URL = 'wss://fishing-ws-server.onrender.com';
-        
-        // ===== 狀態 =====
-        let ws = null;
-        let myId = null;
-        let isController = false;
-        let vibrationEnabled = true;
-        
-        // ===== DOM 元素 =====
-        const statusDot = document.getElementById('status-dot');
-        const statusText = document.getElementById('status-text');
-        const myIdEl = document.getElementById('my-id');
-        const playerName = document.getElementById('player-name');
-        const gameStatus = document.getElementById('game-status');
-        const controlArea = document.getElementById('control-area');
-        const waitingArea = document.getElementById('waiting-area');
-        
-        // ===== 連線管理 =====
+        let ws;
+        let isAllowed = false;
+
         function connect() {
-            updateStatus('connecting', '連線中...');
-            ws = new WebSocket(WS_URL);
+            const name = document.getElementById('name').value;
+            if (!name) return alert("請輸入名字");
             
+            // 修改這裡：wss://fishing-ws-server.onrender.com 替換為你 Render 部署後的網址
+            ws = new WebSocket('wss://fishing-ws-server.onrender.com'); 
+
             ws.onopen = () => {
-                console.log('WebSocket 連線成功');
-                updateStatus('connected', '已連線');
-                ws.send(JSON.stringify({ type: 'register', role: 'student' }));
+                ws.send(JSON.stringify({ type: 'JOIN', name: name }));
+                document.getElementById('login').classList.add('hidden');
+                document.getElementById('remote').classList.remove('hidden');
             };
-            
+
             ws.onmessage = (e) => {
-                const msg = JSON.parse(e.data);
-                handleMessage(msg);
-            };
-            
-            ws.onclose = () => {
-                console.log('連線中斷');
-                updateStatus('disconnected', '連線中斷，3秒後重連...');
-                isController = false;
-                updateControlState();
-                setTimeout(connect, 3000);
-            };
-            
-            ws.onerror = (err) => {
-                console.error('WebSocket 錯誤:', err);
-                updateStatus('disconnected', '連線錯誤');
+                const d = JSON.parse(e.data);
+                const s = document.getElementById('status');
+                if (d.type === 'CONTROL_GRANTED') {
+                    isAllowed = true;
+                    s.innerText = "✅ 你可以控制！";
+                    s.className = "text-green-400 font-bold mb-4 animate-pulse";
+                    if (navigator.vibrate) navigator.vibrate([200,100,200]);
+                } else if (d.type === 'CONTROL_REVOKED') {
+                    isAllowed = false;
+                    s.innerText = "等待老師勾選...";
+                    s.className = "text-yellow-400 font-bold mb-4 animate-pulse";
+                }
             };
         }
-        
-        function handleMessage(msg) {
-            console.log('收到:', msg.type);
-            
-            switch (msg.type) {
-                case 'connected':
-                    myId = msg.yourId;
-                    myIdEl.textContent = `ID: ${myId}`;
-                    playerName.textContent = `學生_${myId}`;
-                    break;
-                    
-                case 'student_registered':
-                    myId = msg.yourId;
-                    myIdEl.textContent = `ID: ${myId}`;
-                    playerName.textContent = `學生_${myId}`;
-                    updateStatus('waiting', msg.waiting ? '等待中...' : '準備就緒');
-                    break;
-                    
-                case 'control_busy':
-                    updateStatus('waiting', `${msg.currentController} 正在玩`);
-                    break;
-                    
-                case 'control_granted':
-                    isController = true;
-                    playerName.textContent = '🎮 我正在控制！';
-                    gameStatus.textContent = '輪到我玩了！';
-                    updateControlState();
-                    vibrate(100);
-                    break;
-                    
-                case 'control_released':
-                    isController = false;
-                    playerName.textContent = `學生_${myId}`;
-                    gameStatus.textContent = '等待老師指派...';
-                    updateControlState();
-                    break;
+
+        function send(cmd) {
+            if (!isAllowed) return;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'INPUT_CMD', command: cmd }));
             }
         }
-        
-        function updateStatus(status, text) {
-            statusDot.className = `status-dot ${status}`;
-            statusText.textContent = text;
-        }
-        
-        function updateControlState() {
-            if (isController) {
-                controlArea.classList.remove('opacity-50', 'pointer-events-none');
-                waitingArea.style.display = 'none';
-            } else {
-                controlArea.classList.add('opacity-50', 'pointer-events-none');
-                waitingArea.style.display = 'block';
-            }
-        }
-        
-        function sendAction(action, data = {}) {
-            if (!ws || ws.readyState !== WebSocket.OPEN) return;
-            ws.send(JSON.stringify({ type: 'game_action', action, data }));
-        }
-        
-        // ===== 震動功能 =====
-        function vibrate(ms = 50) {
-            if (!vibrationEnabled) return;
-            if (navigator.vibrate) {
-                navigator.vibrate(ms);
-            }
-        }
-        
-        // ===== 按鈕事件 =====
-        function handleBtnClick(e) {
-            if (!isController) return;
-            
-            const btn = e.currentTarget;
-            const action = btn.dataset.action;
-            const dir = btn.dataset.dir;
-            
-            // 視覺反饋
-            btn.classList.add('active');
-            setTimeout(() => btn.classList.remove('active'), 100);
-            
-            // 震動
-            vibrate(30);
-            
-            // 發送動作
-            if (action === 'move') {
-                sendAction('move', { direction: dir });
-            } else {
-                sendAction(action);
-            }
-            
-            console.log('發送:', action, dir || '');
-        }
-        
-        // 綁定所有按鈕
-        document.querySelectorAll('.ctrl-btn').forEach(btn => {
-            btn.addEventListener('click', handleBtnClick);
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                handleBtnClick(e);
-            });
-        });
-        
-        // 鍵盤控制
-        document.addEventListener('keydown', (e) => {
-            if (!isController) return;
-            
-            const keyMap = {
-                'ArrowUp': () => { document.getElementById('btn-up').click(); },
-                'ArrowDown': () => { document.getElementById('btn-down').click(); },
-                'ArrowLeft': () => { document.getElementById('btn-left').click(); },
-                'ArrowRight': () => { document.getElementById('btn-right').click(); },
-                ' ': () => { document.getElementById('btn-cast').click(); },
-                'Enter': () => { document.getElementById('btn-reel').click(); }
-            };
-            
-            if (keyMap[e.key]) {
-                e.preventDefault();
-                keyMap[e.key]();
-            }
-        });
-        
-        // ===== 啟動 =====
-        connect();
-        
-        console.log('🎣 釣魚遙控器已啟動');
     </script>
 </body>
 </html>
