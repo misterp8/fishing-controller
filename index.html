@@ -237,6 +237,7 @@
 
             if (!myName) {
                 statusMsg.innerText = "請輸入姓名";
+                // [修改] 如果震動支援，輸入框錯誤時震動一下提醒
                 if (navigator.vibrate) navigator.vibrate(100);
                 return;
             }
@@ -248,6 +249,9 @@
 
             ws.onopen = () => {
                 updateConnectionStatus(true);
+                // [新增] 連線成功震動反饋
+                if (navigator.vibrate) navigator.vibrate(200);
+                
                 ws.send(JSON.stringify({ type: 'JOIN_STUDENT', name: myName }));
                 
                 document.getElementById('login-screen').classList.add('hidden');
@@ -278,6 +282,8 @@
             ws.onclose = () => {
                 updateConnectionStatus(false);
                 if(ws.readyState === WebSocket.CLOSED) {
+                    // [修改] 斷線時給予震動提示
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                     alert("連線已斷開，請重新整理");
                     location.reload();
                 }
@@ -303,6 +309,9 @@
                 
                 function handleStart(e) {
                     e.preventDefault(); 
+                    // [新增] 方向鍵按下的極短觸覺回饋
+                    if (navigator.vibrate) navigator.vibrate(25);
+                    
                     sendMove(dir, true);
                     btn.classList.add('active'); 
                     e.target.setPointerCapture(e.pointerId); 
@@ -325,6 +334,9 @@
             
             function handleActionClick(e) {
                 e.preventDefault(); 
+                // [新增] 主動作按鈕按下的觸覺回饋 (比方向鍵稍長一點，更有手感)
+                if (navigator.vibrate) navigator.vibrate(50);
+
                 actionBtn.classList.add('active');
                 sendInteract(); 
                 setTimeout(() => actionBtn.classList.remove('active'), 200); 
@@ -338,8 +350,9 @@
                 currentGameState = state;
             }
 
+            // [修改] 咬餌震動模式：雙震模式 (震-停-震)，更有衝擊力
             if (shouldVibrate && hasControl && navigator.vibrate) {
-                navigator.vibrate([200, 100, 200]);
+                navigator.vibrate([300, 100, 300]);
             }
 
             const btn = document.getElementById('main-action-btn');
@@ -391,6 +404,8 @@
             if (active) {
                 badge.innerText = "輪到你了!";
                 badge.className = "px-4 py-1.5 rounded-full text-sm font-bold bg-green-600 text-white shadow-lg shadow-green-500/50 border border-green-400 transition-all";
+                // [新增] 輪到自己時，輕震提醒
+                if (navigator.vibrate) navigator.vibrate(200);
                 updateGameStateUI(null, false);
             } else {
                 badge.innerText = "排隊中...";
