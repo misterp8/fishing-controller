@@ -222,12 +222,37 @@
         let myName = '';
         let hasControl = false;
         let currentGameState = null; 
+        let vibrateIntervalId = null;
 
         function updateConnectionStatus(connected) {
             const lights = [document.getElementById('connect-light'), document.getElementById('game-connect-light')];
             const text = document.getElementById('connect-text');
             lights.forEach(l => connected ? l.classList.add('connected') : l.classList.remove('connected'));
             if(text) text.innerText = connected ? "連線中" : "斷線";
+        }
+
+        // ==============================
+        // 震動控制函式
+        // ==============================
+        function startBiteVibration() {
+            // 如果已經在震動中，就不再重複啟動
+            if (vibrateIntervalId) return;
+
+            // 設定迴圈：每 300 毫秒震動一次 (短促震動)
+            vibrateIntervalId = setInterval(() => {
+                if (navigator.vibrate) {
+                    // 模仿心跳的感覺：震-停-震
+                    navigator.vibrate([150, 100, 150]);
+                }
+            }, 400); // 400ms 為一個週期
+        }
+
+        function stopBiteVibration() {
+            if (vibrateIntervalId) {
+                clearInterval(vibrateIntervalId); // 停止迴圈
+                vibrateIntervalId = null;
+                navigator.vibrate(0); // 立即停止任何正在進行的震動
+            }
         }
 
         function connect() {
@@ -349,10 +374,19 @@
             if (state !== undefined) {
                 currentGameState = state;
             }
-
-            // [修改] 咬餌震動模式：雙震模式 (震-停-震)，更有衝擊力
-            if (shouldVibrate && hasControl && navigator.vibrate) {
-                navigator.vibrate([300, 100, 300]);
+            
+            // 處理狀態變化時的震動邏輯
+            if (hasControl) {
+                if (currentGameState === 'BITING') {
+                    // [修改] 如果狀態是咬餌，啟動持續震動迴圈
+                    startBiteVibration();
+                } else {
+                    // [修改] 如果狀態不是咬餌 (例如釣起、回收、結束)，停止震動
+                    stopBiteVibration();
+                }
+            } else {
+                // 如果失去控制權，也要停止震動
+                stopBiteVibration();
             }
 
             const btn = document.getElementById('main-action-btn');
@@ -397,6 +431,7 @@
                     btn.disabled = true;
             }
         }
+
 
         function setControlState(active) {
             hasControl = active;
