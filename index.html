@@ -296,6 +296,7 @@
         <div class="controller-layout z-10 flex-1 relative">
             <div class="absolute inset-0 pointer-events-none opacity-20"
                 style="background: radial-gradient(circle at center, transparent 0%, #000 120%);"></div>
+            
             <div class="flex justify-center items-center flex-1 w-full relative z-10 min-h-0">
                 <div class="d-pad-container">
                     <div></div>
@@ -319,27 +320,30 @@
                     <div></div>
                 </div>
             </div>
-            <div class="flex justify-center items-center flex-1 w-full action-btn-wrapper relative z-20 min-h-0">
-                <div id="btn-normal"
-                    class="action-state-container hidden w-full h-full flex justify-center items-center">
-                    <button id="main-action-btn" disabled
-                        class="game-action-btn-base disabled w-full aspect-square rounded-full flex flex-col items-center justify-center select-none">
-                        <span class="mb-1 drop-shadow-md relative z-10">🐟</span>
-                        <span id="action-text"
-                            class="font-bold font-sans tracking-wider text-white drop-shadow-md relative z-10 select-none">等待中</span>
-                        <div
-                            className="absolute top-0 left-1/4 right-1/4 h-1/2 bg-gradient-to-b from-white/20 to-transparent rounded-full opacity-50 pointer-events-none" />
-                        <div
-                            className="absolute inset-0 w-1/4 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shine pointer-events-none" />
-                    </button>
-                </div>
-                <div id="alert-container" class="action-state-container w-full h-full flex justify-center items-center">
-                    <button id="main-alert-btn" disabled class="w-full aspect-square rounded-full flex flex-col items-center justify-center select-none relative overflow-hidden alert-btn-style
-                                       hover:brightness-110">
-                        <span class="mb-1 drop-shadow-md relative z-10">🚨</span>
-                        <span class="font-black text-white drop-shadow-md tracking-wider relative z-10">釣到了</span>
-                        <div className="absolute inset-0 bg-red-600/20 animate-ping pointer-events-none"></div>
-                    </button>
+
+            <div class="flex justify-center items-center flex-1 w-full relative z-20 min-h-0">
+                <div class="action-btn-wrapper relative">
+                    <div id="btn-normal"
+                        class="action-state-container hidden w-full h-full flex justify-center items-center">
+                        <button id="main-action-btn" disabled
+                            class="game-action-btn-base disabled w-full aspect-square rounded-full flex flex-col items-center justify-center select-none">
+                            <span class="mb-1 drop-shadow-md relative z-10">🐟</span>
+                            <span id="action-text"
+                                class="font-bold font-sans tracking-wider text-white drop-shadow-md relative z-10 select-none">等待中</span>
+                            <div
+                                className="absolute top-0 left-1/4 right-1/4 h-1/2 bg-gradient-to-b from-white/20 to-transparent rounded-full opacity-50 pointer-events-none" />
+                            <div
+                                className="absolute inset-0 w-1/4 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shine pointer-events-none" />
+                        </button>
+                    </div>
+                    <div id="alert-container" class="action-state-container w-full h-full flex justify-center items-center">
+                        <button id="main-alert-btn" disabled class="w-full aspect-square rounded-full flex flex-col items-center justify-center select-none relative overflow-hidden alert-btn-style
+                                           hover:brightness-110">
+                            <span class="mb-1 drop-shadow-md relative z-10">🚨</span>
+                            <span class="font-black text-white drop-shadow-md tracking-wider relative z-10">釣到了</span>
+                            <div className="absolute inset-0 bg-red-600/20 animate-ping pointer-events-none"></div>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
